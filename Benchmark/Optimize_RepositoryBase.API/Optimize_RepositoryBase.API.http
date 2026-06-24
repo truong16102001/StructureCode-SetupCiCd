@@ -1,0 +1,6 @@
+@Optimize_RepositoryBase.API_HostAddress = http://localhost:5004
+
+GET {{Optimize_RepositoryBase.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

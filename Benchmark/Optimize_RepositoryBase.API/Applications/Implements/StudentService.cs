@@ -36,7 +36,11 @@ namespace Optimize_RepositoryBase.API.Applications.Implements
                 .ToList();
         }
 
-        // Check Case: AsNoTracking(); With Include()
+        // Check Case: AsNoTracking(); With Include() ==> splitQuery() 
+        /// <summary>
+        /// Get All student details and evaluation
+        /// </summary>
+        /// <returns></returns>
         public List<Student> GetStudentsDetail()
         {
             return _studentRepository
@@ -45,12 +49,17 @@ namespace Optimize_RepositoryBase.API.Applications.Implements
                 .ToList();
         }
 
-        // Check Case: AsNoTracking(); With Include()
-        public List<Student> GetStudentsDetailById()
+        // Check Case: AsNoTracking(); With Include()==> splitQuery() 
+        /// <summary>
+        /// this case not found
+        /// join before where
+        /// </summary>
+        /// <returns></returns>
+        public List<Student> GetStudentsDetailById(string id)
         {
             return _studentRepository
                 .FindAll(x => x.StudentDetails, x => x.Evaluations)
-                .Where(x => x.Id.Equals(Guid.Parse("02225ea0-4029-41f7-b117-9a41cde997fd")))
+                .Where(x => x.Id.Equals(Guid.Parse(id)))
                 .OrderBy(x => x.Name)
                 .ToList();
         }

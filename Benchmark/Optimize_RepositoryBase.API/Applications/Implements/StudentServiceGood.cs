@@ -6,35 +6,62 @@ namespace Optimize_RepositoryBase.API.Applications.Implements
 {
     public class StudentServiceGood : IStudentServiceGood
     {
-
-        private readonly IRepositoryBaseGood<Student, Guid> _studentRepository;
+        private readonly IRepositoryBaseGood<Student, Guid> _studentRepositoryGood;
         private readonly IUnitOfWork _unitOfWork;
+
+        public StudentServiceGood(
+            IRepositoryBaseGood<Student, Guid> studentRepositoryGood,
+            IUnitOfWork unitOfWork)
+        {
+            _studentRepositoryGood = studentRepositoryGood;
+            _unitOfWork = unitOfWork;
+        }
 
         public async Task<Student> FindByConditionAsync(Guid Id, CancellationToken cancellationToken = default)
         {
-            return await _studentRepository.FindSingleAsync(
+            return await _studentRepositoryGood.FindSingleAsync(
                 x => x.Id.Equals(Id),
                 cancellationToken);
         }
 
         public async Task<Student> FindByIdAsync(Guid Id, CancellationToken cancellationToken = default)
         {
-            return await _studentRepository.FindByIdAsync(Id, cancellationToken);
+            return await _studentRepositoryGood.FindByIdAsync(Id, cancellationToken);
         }
 
+        /// <summary>
+        /// check case: AsNoTracking(); With No Include()
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public List<Student> GetStudents()
         {
-            throw new NotImplementedException();
+            return _studentRepositoryGood.FindAll().OrderBy(x => x.Name).ToList();
         }
 
+        /// <summary>
+        /// check case: AsNoTracking(); With Include()
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public List<Student> GetStudentsDetail()
         {
-            throw new NotImplementedException();
+            return _studentRepositoryGood.FindAll(x => x.StudentDetails, x=> x.Evaluations).OrderBy(x => x.Name).ToList();
         }
 
-        public List<Student> GetStudentsDetailById()
+        /// <summary>
+        /// this case not found
+        /// where before, if found do where syntax
+        /// check case: AsNoTracking(); With Include()
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public List<Student> GetStudentsDetailById(string id)
         {
-            throw new NotImplementedException();
+            return _studentRepositoryGood.FindAll(x => x.StudentDetails, x => x.Evaluations)
+                .Where(x => x.Id.Equals(Guid.Parse(id)))
+                .OrderBy(x => x.Name)
+                .ToList();
         }
     }
 }

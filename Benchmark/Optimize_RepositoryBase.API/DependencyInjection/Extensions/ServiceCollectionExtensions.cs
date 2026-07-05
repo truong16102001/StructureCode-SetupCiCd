@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Optimize_RepositoryBase.API.Abstractions;
+using Optimize_RepositoryBase.API.Applications.Implements;
+using Optimize_RepositoryBase.API.Applications.Interfaces;
 using Optimize_RepositoryBase.API.Infrastructure;
 using Optimize_RepositoryBase.API.Repositories;
 
@@ -8,14 +10,19 @@ namespace Optimize_RepositoryBase.API.DependencyInjection.Extensions
     public static class ServiceCollectionExtensions
     {
         public static void AddSqlConfiguration(
-        this IServiceCollection services,
-        IConfiguration configuration)
+             this IServiceCollection services,
+             IConfiguration configuration)
         {
             services.AddDbContext<ApplicationDBContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("sqlConnection"),
-                    options => options.MigrationsAssembly("Optimize_RepositoryBase.API"))
-                       .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
-            );
+            {
+                options.UseSqlServer(
+                    configuration.GetConnectionString("sqlConnection"),
+                    sqlOptions =>
+                    {
+                        sqlOptions.MigrationsAssembly("Optimize_RepositoryBase.API");
+                        sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                    });
+            });
         }
 
         public static void AddServiceConfiguration(this IServiceCollection services)

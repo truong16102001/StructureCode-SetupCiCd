@@ -8,33 +8,19 @@ namespace Optimize_RepositoryBase.API.Infrastructure.Configurations
     {
         private List<Student> InitData()
         {
-            List<Student> students = new List<Student>()
+            var students = new List<Student>();
+
+            for (int i = 1; i <= 1000; i++)
             {
-                new Student()
+                students.Add(new Student
                 {
-                    Id = Guid.Parse("3cdd6589-2cb2-4794-a01f-f9c0c602d048"),
-                    Name = "John Doe1",
-                    Age = 10
-                },
-                new Student()
-                {
-                    Id = Guid.Parse("24051c09-df63-4f5f-8a9e-7c7cd9bdca2e"),
-                    Name = "John Doe2",
-                    Age = 20
-                },
-                new Student()
-                {
-                    Id = Guid.Parse("d4d06f82-f71c-49e3-9aaf-634ae7afc56b"),
-                    Name = "John Doe3",
-                    Age = 30
-                },
-                new Student()
-                {
-                    Id = Guid.Parse("5664f3e6-7098-4ea6-b4ee-27756654a6a3"),
-                    Name = "John Doe4",
-                    Age = 40
-                }
-            };
+                    Id = Guid.Parse($"00000000-0000-0000-0000-{i.ToString("D12")}"),
+                    Name = $"Student {i}",
+                    Age = 18 + (i % 40),
+                    IsRegularStudent = i % 2 == 0
+                });
+            }
+
             return students;
         }
 

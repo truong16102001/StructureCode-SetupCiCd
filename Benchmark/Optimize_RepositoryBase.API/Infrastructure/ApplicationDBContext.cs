@@ -16,34 +16,40 @@ namespace Optimize_RepositoryBase.API.Infrastructure
             modelBuilder.Entity<StudentDetails>().HasData(
                 new StudentDetails()
                 {
-                    Id = Guid.NewGuid(),
-                    StudentId = Guid.Parse("3cdd6589-2cb2-4794-a01f-f9c0c602d048"),
+                    Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
+                    StudentId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
                     Address = "Ha Noi",
                     AdditionalInformation = "Senior Solution Architecture"
                 },
                 new StudentDetails()
                 {
-                    Id = Guid.NewGuid(),
-                    StudentId = Guid.Parse("24051c09-df63-4f5f-8a9e-7c7cd9bdca2e"),
+                    Id = Guid.Parse("10000000-0000-0000-0000-000000000002"),
+                    StudentId = Guid.Parse("00000000-0000-0000-0000-000000000002"),
                     Address = "Ha Noi",
                     AdditionalInformation = "Senior Solution Architecture"
                 },
                 new StudentDetails()
                 {
-                    Id = Guid.NewGuid(),
-                    StudentId = Guid.Parse("d4d06f82-f71c-49e3-9aaf-634ae7afc56b"),
+                    Id = Guid.Parse("10000000-0000-0000-0000-000000000003"),
+                    StudentId = Guid.Parse("00000000-0000-0000-0000-000000000003"),
                     Address = "Ha Noi",
                     AdditionalInformation = "Senior Solution Architecture"
                 },
                 new StudentDetails()
                 {
-                    Id = Guid.NewGuid(),
-                    StudentId = Guid.Parse("5664f3e6-7098-4ea6-b4ee-27756654a6a3"),
+                    Id = Guid.Parse("10000000-0000-0000-0000-000000000004"),
+                    StudentId = Guid.Parse("00000000-0000-0000-0000-000000000004"),
                     Address = "Ha Noi",
                     AdditionalInformation = "Senior Solution Architecture"
                 }
             );
         }
 
+
+        public DbSet<Student> Students { get; set; }
+
+        public DbSet<Evaluation> Evaluations { get; set; }
+
+        public DbSet<StudentDetails> StudentDetails { get; set; }
     }
 }

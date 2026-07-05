@@ -6,7 +6,7 @@ namespace Optimize_RepositoryBase.API.Applications.Interfaces
     {
         List<Student> GetStudentsDetail();
 
-        List<Student> GetStudentsDetailById(); // => Not Found
+        List<Student> GetStudentsDetailById(string id); // test trong trường hợp Not Found
 
         List<Student> GetStudents();
 

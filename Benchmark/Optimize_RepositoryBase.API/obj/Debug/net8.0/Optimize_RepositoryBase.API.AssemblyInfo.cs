@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Optimize_RepositoryBase.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c4239c6b3fb3b75a21507991b25bf8246b189941")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+31ce123d323e9c8f75d07a6ed87eadbdd3090d1f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Optimize_RepositoryBase.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Optimize_RepositoryBase.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

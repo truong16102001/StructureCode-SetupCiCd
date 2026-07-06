@@ -11,7 +11,11 @@ namespace Benchmark.Services
     public class StudentHttpClient
     {
         private static readonly HttpClient client = new HttpClient();
-        private const string BaseAddress = "http://localhost:5153/api/Students";
+        private const string BaseAddress = "http://localhost:5154/api/Students";
+        // db.sql co seed StudentId nay, nen benchmark ById/Condition se tra ve du lieu that.
+        private const string ExistingStudentId = "00000000-0000-0000-0000-000000000001";
+        // Guid dung format nhung khong co trong DB, dung de benchmark case not-found ma khong bi 400.
+        private const string NotFoundStudentId = "99999999-9999-9999-9999-999999999999";
 
         public StudentHttpClient() { 
             client.DefaultRequestHeaders.Accept.Clear();
@@ -25,7 +29,7 @@ namespace Benchmark.Services
 
         public async Task<List<Student>> GetStudentDetailsByIdAsync()
         {
-            return await client.GetFromJsonAsync<List<Student>>($"{BaseAddress}/student-with-details-by-id");
+            return await client.GetFromJsonAsync<List<Student>>($"{BaseAddress}/student-with-details-by-id?id={NotFoundStudentId}");
         }
 
         public async Task<List<Student>> GetStudentAsync()
@@ -33,14 +37,14 @@ namespace Benchmark.Services
             return await client.GetFromJsonAsync<List<Student>>($"{BaseAddress}/students");
         }
 
-        public async Task<List<Student>> GetStudentByIdAsync()
+        public async Task<Student?> GetStudentByIdAsync()
         {
-            return await client.GetFromJsonAsync<List<Student>>($"{BaseAddress}/students-by-id");
+            return await client.GetFromJsonAsync<Student>($"{BaseAddress}/students-by-id?id={ExistingStudentId}");
         }
 
-        public async Task<List<Student>> GetStudentByConditionAsync()
+        public async Task<Student?> GetStudentByConditionAsync()
         {
-            return await client.GetFromJsonAsync<List<Student>>($"{BaseAddress}/students-by-condition");
+            return await client.GetFromJsonAsync<Student>($"{BaseAddress}/students-by-condition?id={ExistingStudentId}");
         }
     }
 }

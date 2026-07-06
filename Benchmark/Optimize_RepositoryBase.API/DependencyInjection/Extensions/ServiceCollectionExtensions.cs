@@ -20,6 +20,8 @@ namespace Optimize_RepositoryBase.API.DependencyInjection.Extensions
                     sqlOptions =>
                     {
                         sqlOptions.MigrationsAssembly("Optimize_RepositoryBase.API");
+                        // SplitQuery tranh tao mot cau JOIN qua lon khi query Include nhieu collection.
+                        // Cach nay co the giam dong bi lap/cartesian explosion cho cac API doc nhieu du lieu.
                         sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                     });
             });

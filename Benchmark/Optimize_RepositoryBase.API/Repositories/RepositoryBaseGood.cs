@@ -25,16 +25,19 @@ namespace Optimize_RepositoryBase.API.Repositories
         }
 
         /// <summary>
-        /// haven't reached to db to fetch data so this is not case IO-bound
+        /// Tra ve IQueryable de tiep tuc ghep query; chua thuc su cham DB cho den khi ToList/SingleOrDefault duoc goi.
         /// </summary>
         /// <param name="includeProperties"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
         public IQueryable<TEntity> FindAll(params Expression<Func<TEntity, object>>[] includeProperties)
         {
+            // Luong doc toi uu: AsNoTracking tat change tracking cua EF Core.
+            // Dung cho endpoint chi query vi ta khong update cac entity nay sau khi doc.
             IQueryable<TEntity> items = _context.Set<TEntity>().AsNoTracking();
             if (includeProperties != null) {
                 foreach (var property in includeProperties) { 
+                    // Include van load du lieu lien ket, chi khong track graph entity da load.
                     items = items.Include(property);
                 }
             }
@@ -43,6 +46,7 @@ namespace Optimize_RepositoryBase.API.Repositories
 
         public IQueryable<TEntity> FindAll(Expression<Func<TEntity, bool>> predicate, params Expression<Func<TEntity, object>>[] includeProperties)
         {
+            // Dat AsNoTracking truoc khi ghep filter/include de query cuoi van la read-only.
             IQueryable<TEntity> items = _context.Set<TEntity>().AsNoTracking();
             if (includeProperties != null)
             {
@@ -56,12 +60,14 @@ namespace Optimize_RepositoryBase.API.Repositories
 
         public async Task<TEntity> FindByIdAsync(TKey id, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] includeProperties)
         {
+            // Goi database dang async giup giai phong request thread trong luc SQL Server dang xu ly I/O.
             return await FindAll(includeProperties)
                 .SingleOrDefaultAsync(x => x.Id.Equals(id), cancellationToken);
         }
 
         public async Task<TEntity> FindSingleAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default, params Expression<Func<TEntity, object>>[] includeProperties)
         {
+            // Ban async cua lookup theo dieu kien, duoc cac endpoint "Good" su dung.
             return await FindAll(includeProperties)
                 .SingleOrDefaultAsync(predicate, cancellationToken);
         }

@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Run API + Benchmark",
+      "configurations": [
+        "API",
+        "Benchmark"
+      ],
+      "stopAll": true
+    }
+  ],
+  "configurations": [
+    
+    {
+      "name": "API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-api",
+      "program": "${workspaceFolder}/Benchmark/Optimize_RepositoryBase.API/bin/Release/net8.0/Optimize_RepositoryBase.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/Benchmark/Optimize_RepositoryBase.API",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5154"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/swagger"
+      }
+    },
+    {
+      "name": "Benchmark",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-benchmark",
+      "program": "${workspaceFolder}/Benchmark/Benchmark/bin/Release/net8.0/Benchmark.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/Benchmark/Benchmark",
+      "console": "integratedTerminal"
+    }
+  ]
+}

@@ -1,0 +1,402 @@
+HUONG DAN DOC SOURCE VA CHAY BENCHMARK
+=====================================
+
+1. Muc tieu cua source code nay
+-------------------------------
+
+Solution nay dung de benchmark cac cach truy van Student API bang Entity Framework Core.
+
+Co 2 nhom API:
+
+- Baseline API:
+  - Controller: Optimize_RepositoryBase.API/Controllers/StudentsController.cs
+  - Service: Optimize_RepositoryBase.API/Applications/Implements/StudentService.cs
+  - Repository: Optimize_RepositoryBase.API/Repositories/RepositoryBase.cs
+
+- Good API:
+  - Controller: Optimize_RepositoryBase.API/Controllers/StudentsGoodController.cs
+  - Service: Optimize_RepositoryBase.API/Applications/Implements/StudentServiceGood.cs
+  - Repository: Optimize_RepositoryBase.API/Repositories/RepositoryBaseGood.cs
+
+Project Benchmark/Benchmark se goi API bang HttpClient va dung BenchmarkDotNet de do thoi gian.
+
+
+2. Baseline va Good khac nhau o dau?
+------------------------------------
+
+Baseline RepositoryBase:
+
+- Dung _dbContext.Set<TEntity>() truc tiep.
+- EF Core mac dinh bat change tracking.
+- Phu hop khi doc entity xong se update/save lai.
+- Voi read-only API, tracking co the ton them RAM va CPU vi EF phai ghi nho trang thai entity.
+
+Good RepositoryBaseGood:
+
+- Dung _context.Set<TEntity>().AsNoTracking().
+- Dung async query nhu SingleOrDefaultAsync.
+- Phu hop cho endpoint chi doc data va tra ve client.
+
+
+3. AsNoTracking lam gi?
+----------------------
+
+AsNoTracking bao EF Core: "Toi chi doc data, khong can theo doi entity nay de update".
+
+Neu khong co AsNoTracking:
+
+- EF Core tao entity.
+- EF Core dua entity vao Change Tracker.
+- EF Core ghi nho original values/trang thai de sau nay co the SaveChanges.
+
+Neu co AsNoTracking:
+
+- EF Core tao entity va tra ve ket qua.
+- EF Core khong gan entity vao Change Tracker.
+- Thuong nhanh hon va nhe RAM hon cho read-only query.
+
+Nen dung AsNoTracking khi:
+
+- API chi GET data.
+- Khong goi Update/Remove/SaveChanges voi entity vua doc.
+- Danh sach tra ve lon hoac endpoint duoc goi nhieu.
+
+Khong nen dung AsNoTracking khi:
+
+- Ban doc entity roi sua property va goi SaveChanges.
+- Ban can EF Core tu detect change tren entity do.
+
+
+4. Include lam gi?
+-----------------
+
+Include dung de load navigation properties.
+
+Vi du Student co:
+
+- StudentDetails
+- Evaluations
+- StudentSubjects
+
+Neu query Student ma can ca StudentDetails/Evaluations, code se dung:
+
+FindAll(x => x.StudentDetails, x => x.Evaluations)
+
+Neu khong Include, EF Core chi load Student. Cac navigation property co the null/empty tuy cau hinh lazy loading.
+
+
+5. SplitQuery lam gi?
+--------------------
+
+Trong ServiceCollectionExtensions.cs dang cau hinh:
+
+sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+
+Khi query co nhieu Include, EF Core co 2 cach:
+
+- Single query: tao mot cau SQL JOIN lon.
+- Split query: tach thanh nhieu cau SQL nho hon.
+
+Single query co the bi lap du lieu nhieu lan khi Include collection.
+Vi du Student include Evaluations va Subjects co the tao ra nhieu dong bi nhan len.
+Day goi la cartesian explosion.
+
+SplitQuery giup:
+
+- Giam so dong bi nhan len trong ket qua SQL.
+- De doc hon voi query Include nhieu collection.
+- Co the tot hon cho read-heavy endpoint co Include lon.
+
+Doi lai:
+
+- SplitQuery co the gui nhieu cau SQL hon.
+- Khong phai luc nao cung nhanh hon. Can benchmark voi data that.
+
+
+6. Async query huu dung nhu the nao?
+-----------------------------------
+
+Good repository dung:
+
+- SingleOrDefaultAsync
+- FindSingleAsync
+- FindByIdAsync
+
+Async khong lam SQL Server chay nhanh hon mot cach than ky.
+Gia tri chinh la trong web API:
+
+- Trong luc doi SQL Server tra ket qua, request thread co the duoc giai phong.
+- API co the phuc vu nhieu request dong thoi tot hon.
+
+Async huu dung nhat voi I/O-bound work: database, HTTP call, file/network.
+
+
+7. Benchmark project hoat dong nhu the nao?
+-------------------------------------------
+
+File chinh:
+
+- Benchmark/Benchmark/Program.cs
+- Benchmark/Benchmark/BenchmarkHarness.cs
+- Benchmark/Benchmark/Services/StudentHttpClient.cs
+- Benchmark/Benchmark/Services/StudentGoodHttpClient.cs
+
+Program.cs chay:
+
+BenchmarkRunner.Run<BenchmarkHarness>();
+
+BenchmarkHarness co cac method gan [Benchmark].
+Moi method se lap theo IterationCount:
+
+[Params(1, 5)]
+public int IterationCount;
+
+Nghia la BenchmarkDotNet chay moi benchmark voi:
+
+- 1 lan goi API
+- 5 lan goi API
+
+HttpClient baseline goi:
+
+http://localhost:5154/api/Students
+
+HttpClient good goi:
+
+http://localhost:5154/api/StudentsGood
+
+Id dung trong benchmark hien tai:
+
+- ExistingStudentId: 00000000-0000-0000-0000-000000000001
+- NotFoundStudentId: 99999999-9999-9999-9999-999999999999
+
+ExistingStudentId co trong db.sql.
+NotFoundStudentId dung de benchmark not-found path nhung van dung format Guid, tranh loi 400 Bad Request.
+
+
+8. Cai BenchmarkDotNet / NuGet can thiet
+----------------------------------------
+
+Project Benchmark/Benchmark.csproj da co:
+
+<PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+
+Neu tao project benchmark moi tu dau, co the cai bang:
+
+dotnet add package BenchmarkDotNet
+
+Hoac chi ro version:
+
+dotnet add package BenchmarkDotNet --version 0.15.8
+
+Sau do restore:
+
+dotnet restore
+
+De viet benchmark:
+
+1. Tao class benchmark.
+2. Them using BenchmarkDotNet.Attributes.
+3. Gan [Benchmark] vao method can do.
+4. Trong Program.cs goi BenchmarkRunner.Run<TBenchmarkClass>().
+
+Vi du:
+
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
+
+public class MyBenchmark
+{
+    [Benchmark]
+    public void Test()
+    {
+        // Code can do benchmark
+    }
+}
+
+BenchmarkRunner.Run<MyBenchmark>();
+
+
+9. Chuan bi database
+--------------------
+
+API dung SQL Server connection string trong:
+
+Benchmark/Optimize_RepositoryBase.API/appsettings.json
+
+Repo co file db.sql o root:
+
+db.sql
+
+Can tao database va import script nay vao SQL Server truoc khi benchmark.
+Neu khong co data, cac endpoint van co the chay nhung benchmark khong phan anh dung case hien tai.
+
+Luu y: appsettings.json co connection string local. Khi commit public/internal team, nen can nhac khong commit password that.
+
+
+10. Chay API va benchmark trong VS Code
+---------------------------------------
+
+Da co file:
+
+.vscode/launch.json
+.vscode/tasks.json
+
+Chay bang VS Code:
+
+1. Mo workspace root:
+
+   D:\study\StructureCode-SetupCiCd
+
+2. Bam Ctrl+Shift+D.
+3. Chon cau hinh:
+
+   Run API + Benchmark
+
+4. Bam F5.
+
+API se chay tai:
+
+http://localhost:5154/swagger
+
+Benchmark se goi API tren port 5154.
+
+
+11. Chay bang terminal
+----------------------
+
+Terminal 1: chay API
+
+dotnet run --project Benchmark\Optimize_RepositoryBase.API\Optimize_RepositoryBase.API.csproj
+
+Mo Swagger:
+
+http://localhost:5154/swagger
+
+Terminal 2: chay benchmark
+
+dotnet run --project Benchmark\Benchmark\Benchmark.csproj -c Release
+
+Nen chay benchmark o Release, vi Debug co overhead debug va khong phan anh performance that.
+
+
+12. Loi thuong gap
+------------------
+
+Loi port dang duoc dung:
+
+Failed to bind to address http://127.0.0.1:5154: address already in use
+
+Nguyen nhan:
+
+- API da chay san roi.
+- Ban bam Run API + Benchmark lan nua.
+
+Cach xu ly:
+
+- Stop debug session trong VS Code.
+- Hoac kill process API cu.
+
+
+Loi build benchmark bi khoa file:
+
+The process cannot access the file Benchmark.dll because it is being used by another process.
+
+Nguyen nhan:
+
+- Benchmark cu van dang chay.
+
+Cach xu ly:
+
+- Stop terminal/debug benchmark cu.
+- Hoac chay:
+
+  Stop-Process -Name Benchmark
+
+
+Loi 400 Bad Request voi id:
+
+{"errors":{"id":["The id field is required."]}}
+
+Nguyen nhan:
+
+- API action can query string id.
+- Vi controller co [ApiController], thieu id se tu dong tra 400.
+
+URL dung:
+
+http://localhost:5154/api/Students/students-by-id?id=00000000-0000-0000-0000-000000000001
+
+
+Loi deserialize JSON:
+
+Nguyen nhan thuong gap:
+
+- API tra ve object Student.
+- Client lai doc thanh List<Student>.
+
+Cach fix:
+
+- Endpoint tra object thi dung GetFromJsonAsync<Student>.
+- Endpoint tra array thi dung GetFromJsonAsync<List<Student>>.
+
+
+13. Cach doc ket qua BenchmarkDotNet
+------------------------------------
+
+Sau khi chay xong, BenchmarkDotNet in bang ket qua trong terminal.
+
+Thuong can nhin:
+
+- Mean: thoi gian trung binh.
+- Error/StdDev: do dao dong.
+- Ratio neu co baseline config.
+- Allocated neu co memory diagnoser.
+
+Ket qua benchmark HTTP API co the dao dong vi:
+
+- SQL Server cache.
+- API warmup.
+- May dang chay process khac.
+- Network stack local.
+- Lan dau query co JIT/EF model warmup.
+
+Nen doc benchmark theo xu huong, khong nen ket luan tu mot lan chay duy nhat.
+
+
+14. Khi nao "Good" thuc su tot?
+-------------------------------
+
+Good co kha nang tot hon khi:
+
+- Endpoint chi doc data.
+- Query tra ve nhieu rows.
+- Query co Include nhieu navigation.
+- API bi goi dong thoi nhieu.
+- Khong can update entity sau khi doc.
+
+Good khong phai luon nhanh hon neu:
+
+- Data rat nho.
+- Query don gian.
+- SplitQuery tao qua nhieu round-trip SQL.
+- Bottleneck nam o network/API serialization thay vi EF Core.
+
+Viec benchmark trong repo nay giup kiem tra bang so lieu thay vi doan cam tinh.
+
+
+15. Checklist tu code moi den benchmark
+---------------------------------------
+
+1. Dam bao API chay duoc tren Swagger.
+2. Dam bao database co data tu db.sql.
+3. Dam bao endpoint benchmark goi dung port 5154.
+4. Dam bao URL can id co query string id.
+5. Dam bao return type client khop response API:
+   - API tra array -> List<Student>
+   - API tra object -> Student?
+6. Build API.
+7. Build benchmark.
+8. Chay API truoc.
+9. Chay benchmark bang Release.
+10. Doc ket qua Mean/StdDev va so sanh baseline vs Good.
+

@@ -26,9 +26,12 @@ namespace Optimize_RepositoryBase.API.Repositories
 
         public IQueryable<TEntity> FindAll(params Expression<Func<TEntity, object>>[] includeProperties)
         {
+            // Ban baseline: EF Core mac dinh track cac entity duoc tra ve.
+            // Phu hop luong update, nhung API chi doc se ton them RAM/CPU cho change tracking.
             IQueryable<TEntity> items = _dbContext.Set<TEntity>();
             if (includeProperties != null) {
                 foreach (var property in includeProperties) { 
+                    // Include load them du lieu lien ket nhu StudentDetails/Evaluations kem theo Student.
                     items = items.Include(property);
                 }
             }

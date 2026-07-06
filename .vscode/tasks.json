@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-api",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/Benchmark/Optimize_RepositoryBase.API/Optimize_RepositoryBase.API.csproj",
+        "--configuration",
+        "Release"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build-benchmark",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/Benchmark/Benchmark/Benchmark.csproj",
+        "--configuration",
+        "Release",
+        "/p:UseAppHost=false"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

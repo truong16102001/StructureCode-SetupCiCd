@@ -7,7 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DemoCICD.Persistence\DemoCICD.Persistence.csproj" />
+    <ProjectReference Include="..\DemoCICD.Application\DemoCICD.Application.csproj" />
+    <ProjectReference Include="..\DemoCICD.Insfrastructure\DemoCICD.Infrastructure.csproj" />
+    <ProjectReference Include="..\DemoCICD.Presentation\DemoCICD.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

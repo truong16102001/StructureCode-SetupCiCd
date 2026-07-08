@@ -1,0 +1,53 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+out/
+artifacts/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test output and coverage
+TestResults/
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+*.trx
+*.opencover.xml
+*.cobertura.xml
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.assets.json
+
+# ASP.NET / local settings
+appsettings.Development.local.json
+appsettings.Local.json
+secrets.json
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+*.cache
+*.bak
+*.swp
+~$*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini

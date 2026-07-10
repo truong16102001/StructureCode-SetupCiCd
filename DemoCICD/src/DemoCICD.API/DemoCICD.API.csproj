@@ -11,9 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DemoCICD.Persistence\DemoCICD.Persistence.csproj" />
     <ProjectReference Include="..\DemoCICD.Application\DemoCICD.Application.csproj" />
     <ProjectReference Include="..\DemoCICD.Insfrastructure\DemoCICD.Infrastructure.csproj" />
+    <ProjectReference Include="..\DemoCICD.Persistence\DemoCICD.Persistence.csproj" />
     <ProjectReference Include="..\DemoCICD.Presentation\DemoCICD.Presentation.csproj" />
   </ItemGroup>
 

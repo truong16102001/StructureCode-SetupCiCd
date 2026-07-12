@@ -1,3 +1,4 @@
+using DemoCICD.Application.Asbtractions.Message;
 using FluentAssertions;
 using NetArchTest.Rules;
 
@@ -136,4 +137,171 @@ public class ArchitectureTests
     }
 
     #endregion =============== Infrastructure Layer ===============
+
+    #region =============== Command ===============
+
+    [Fact]
+    public void Command_Should_Have_NamingConventionEndingWithCommand()
+    {
+        // Arrange
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types.InAssembly(assembly)
+            .That().ImplementInterface(typeof(ICommand))
+            .Should().HaveNameEndingWith("Command")
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CommandT_Should_Have_NamingConventionEndingWithCommand()
+    {
+        // Arrage
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types
+            .InAssembly(assembly)
+            .That()
+            .ImplementInterface(typeof(ICommand<>))
+            .Should().HaveNameEndingWith("Command")
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CommandHandlers_Should_Have_NamingConventionEndingCommandHandler()
+    {
+        // Arrange
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types.InAssembly(assembly)
+            .That()
+            .ImplementInterface(typeof(ICommandHandler<>))
+            .Should()
+            .HaveNameEndingWith("CommandHandler")
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CommandHandlers_Should_Have_BeSealed()
+    {
+        // Arrange
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types.InAssembly(assembly)
+            .That()
+            .ImplementInterface(typeof(ICommandHandler<>))
+            .Should()
+            .BeSealed()
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CommandHandlersT_Should_Have_NamingConventionEndingCommandHandler()
+    {
+        // Arrange
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types.InAssembly(assembly)
+            .That()
+            .ImplementInterface(typeof(ICommandHandler<,>))
+            .Should()
+            .HaveNameEndingWith("CommandHandler")
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CommandHandlersT_Should_Have_BeSealed()
+    {
+        // Arrange
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types.InAssembly(assembly)
+            .That()
+            .ImplementInterface(typeof(ICommandHandler<,>))
+            .Should()
+            .BeSealed()
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+    #endregion
+
+    #region =============== Query ===============
+
+    [Fact]
+    public void Query_Should_Have_NamingConventionEndingQuery()
+    {
+        // Arrage
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types
+            .InAssembly(assembly)
+            .That()
+            .ImplementInterface(typeof(IQuery<>))
+            .Should().HaveNameEndingWith("Query")
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void QueryHandlers_Should_Have_NamingConventionEndingQueryHandler()
+    {
+        // Arrange
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types.InAssembly(assembly)
+            .That()
+            .ImplementInterface(typeof(IQueryHandler<,>))
+            .Should()
+            .HaveNameEndingWith("QueryHandler")
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+
+    [Fact]
+    public void QueryHandlers_Should_Have_BeSealed()
+    {
+        // Arrange
+        var assembly = Application.AssemblyReference.Assembly;
+
+        // Act
+        var testResult = Types.InAssembly(assembly)
+            .That()
+            .ImplementInterface(typeof(IQueryHandler<,>))
+            .Should()
+            .BeSealed()
+            .GetResult();
+
+        // Assert
+        testResult.IsSuccessful.Should().BeTrue();
+    }
+
+    #endregion End Query
 }

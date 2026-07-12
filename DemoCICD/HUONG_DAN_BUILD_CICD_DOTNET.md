@@ -1,546 +1,609 @@
-# Huong dan build project .NET Clean Architecture va chuan bi CI/CD bang Visual Studio
+# Huong dan build project .NET Clean Architecture va chuan bi CI/CD
 
-Tai lieu nay huong dan tung buoc tren Visual Studio de tao solution `DemoCICD`, sap xep project theo Clean Architecture, them coding convention chung, viet architecture test va tranh day file rac len Git.
+## CI/CD la gi?
 
-Luu y: day la huong dan thao tac tren Visual Studio, khong phai VS Code va khong uu tien command line.
+CI/CD la cach tu dong hoa qua trinh build, test va deploy phan mem.
 
-## 1. Cau truc mong muon
+- `CI` la `Continuous Integration`: moi khi code duoc day len repository, he thong tu dong restore package, build project va chay test de phat hien loi som.
+- `CD` la `Continuous Delivery/Continuous Deployment`: sau khi CI thanh cong, he thong co the tu dong tao ban publish va day ung dung len moi truong deploy nhu IIS, server dev, staging hoac production.
+
+Muc tieu cua CI/CD:
+
+- Giam loi khi build/deploy thu cong.
+- Dam bao code moi khong lam hong kien truc hoac test hien co.
+- Giup qua trinh dua code tu may dev len server nhanh va on dinh hon.
+
+## 1. Tao cau truc thu muc solution
+
+Tao 3 thu muc chinh:
+
+- `solution items`
+- `src`
+- `tests`
+
+Y nghia:
+
+- `solution items`: chua cac file cau hinh chung cua solution.
+- `src`: chua cac project source code.
+- `tests`: chua cac project test.
+
+## 2. Tao cac project trong src
+
+### DemoCICD.Domain
+
+Day la layer trong cung cua he thong.
+
+Chua:
+
+- Entity.
+- Value object.
+- Domain event.
+- Enum.
+- Interface thuan domain.
+- Cac class shared nhu `Error`, `Result`, `Result<T>`.
+
+Layer nay khong reference project nao khac.
+
+### DemoCICD.Application
+
+Day la layer chua use case cua he thong.
+
+Chua:
+
+- Command.
+- Query.
+- Handler.
+- DTO/Response model.
+- Validator.
+- Interface service/repository can dung cho use case.
+
+Layer nay reference `DemoCICD.Domain`.
+
+### DemoCICD.Infrastructure
+
+Day la layer chua cac implementation lien quan den ha tang ben ngoai.
+
+Vi du:
+
+- Email service.
+- File storage.
+- Cache.
+- Date time provider.
+- JWT/token service.
+- Third-party service.
+
+Layer nay co the reference `DemoCICD.Application`, `DemoCICD.Domain`, `DemoCICD.Persistence` tuy cach tach implementation.
+
+### DemoCICD.Persistence
+
+Day la layer lam viec voi database.
+
+Chua:
+
+- DbContext.
+- Migration.
+- Entity configuration.
+- Repository implementation.
+
+Layer nay dung de tach logic truy cap database ra khoi `Application`.
+
+### DemoCICD.Presentation
+
+Day la layer trinh bay API endpoint neu muon tach controller/endpoint ra khoi project `API`.
+
+Chua:
+
+- Controller.
+- Endpoint.
+- Route group.
+- Mapping request/response.
+
+Layer nay goi use case thong qua `Application`, thuong la qua MediatR.
+
+### DemoCICD.API
+
+Day la project startup chinh cua he thong.
+
+Chua:
+
+- `Program.cs`.
+- Cau hinh Dependency Injection.
+- Middleware.
+- Swagger.
+- Cau hinh MediatR.
+- Cau hinh validation.
+
+API khong nen chua business logic. API chi nhan request, goi use case va tra response.
+
+### DemoCICD.Contract
+
+Day la project chua cac class dung chung neu can chia se giua nhieu project.
+
+Chua:
+
+- Request DTO.
+- Response DTO.
+- Pagination model.
+- Api response model.
+
+Luu y: `Contract` chi nen chua object don gian, khong chua business logic.
+
+## 3. Thiet lap project reference
+
+Thiet lap reference theo chieu Clean Architecture:
+
+- `Domain`: khong reference project nao.
+- `Application`: reference `Domain`.
+- `Infrastructure`: reference `Application`, `Domain`, co the reference `Persistence` neu can.
+- `Persistence`: reference `Domain`, co the reference `Application` neu implement interface tu Application.
+- `Presentation`: reference `Application`.
+- `API`: reference `Application`, `Infrastructure`, `Persistence`, `Presentation`, `Contract` neu co.
+
+Muc tieu:
+
+- Layer ben trong khong phu thuoc layer ben ngoai.
+- Business core khong phu thuoc vao API, database hay framework ha tang.
+- Code de test va de thay doi implementation ve sau.
+
+## 4. Tao file AssemblyReference.cs cho moi project
+
+Tao file `AssemblyReference.cs` trong cac project:
+
+- `DemoCICD.Domain`
+- `DemoCICD.Application`
+- `DemoCICD.Infrastructure`
+- `DemoCICD.Persistence`
+- `DemoCICD.Presentation`
+- `DemoCICD.API`
+- `DemoCICD.Contract`
+
+### Assembly la gi?
+
+Trong .NET, moi project khi build se tao ra mot assembly, thuong la file `.dll`.
+
+Vi du:
+
+- `DemoCICD.Domain` build ra `DemoCICD.Domain.dll`.
+- `DemoCICD.Application` build ra `DemoCICD.Application.dll`.
+
+Assembly co the hieu don gian la file da bien dich cua mot project. Ben trong assembly co cac class, interface, enum, handler, validator... cua project do.
+
+### AssemblyReference la gi?
+
+`AssemblyReference.cs` la mot class nho dung de lay ra assembly cua project hien tai.
+
+Thay vi viet truc tiep ten assembly bang string, ta tao `AssemblyReference` de cac noi khac co the tro den assembly mot cach ro rang va an toan hon.
+
+### Dung de lam gi?
+
+`AssemblyReference` duoc dung trong 2 truong hop chinh:
+
+- Architecture test: lay assembly cua tung layer de kiem tra dependency rule.
+- MediatR/FluentValidation: scan assembly `Application` de tim handler va validator.
+
+Vi du ve y tuong:
+
+- Test muon kiem tra `Domain` co phu thuoc `Infrastructure` khong thi can lay assembly cua `Domain`.
+- MediatR muon tim cac handler thi can scan assembly cua `Application`.
+- FluentValidation muon tim cac validator thi can scan assembly cua `Application`.
+
+Luu y:
+
+- Moi project chi can tao mot file `AssemblyReference.cs`.
+- Namespace trong file phai dung voi namespace project.
+- Chi can tao class, chi tiet code xem truc tiep trong source.
+
+## 5. Tao coding convention cho solution
+
+Trong solution, them:
+
+- `.editorconfig`
+- `Directory.Build.props`
+- `.gitignore`
+
+### .editorconfig
+
+Dung de thong nhat coding convention cho toan bo solution.
+
+Vi du:
+
+- Cach dat indent.
+- Quy tac format code.
+- Quy tac style C#.
+
+### Directory.Build.props
+
+Dung de cau hinh build va analyzer ap dung cho tat ca project.
+
+Bo sung analyzer:
+
+- `SonarAnalyzer.CSharp`: check code smell.
+- `StyleCop.Analyzers`: check coding convention.
+
+### .gitignore
+
+Dung de khong day file rac len Git.
+
+Vi du:
+
+- `.vs`
+- `bin`
+- `obj`
+- `TestResults`
+- file `.user`
+- file log/cache
+
+## 6. Setup Domain
+
+Trong `DemoCICD.Domain`, tao cac thu muc:
+
+- `Abstractions`
+- `Abstractions/Entities`
+- `Abstractions/Repositories`
+- `Entities`
+- `Enumerations`
+- `Shared`
+
+Y nghia:
+
+- `Abstractions/Entities`: chua base entity/interface cho entity.
+- `Abstractions/Repositories`: chua repository interface.
+- `Entities`: chua entity chinh cua he thong.
+- `Enumerations`: chua enum dung trong domain.
+- `Shared`: chua cac class dung chung cua domain.
+
+Trong `Shared`, tao:
+
+- `Error`
+- `Result`
+- `Result<T>`
+- `IValidationResult`
+- `ValidationResult`
+- `ValidationResult<T>`
+
+Y nghia:
+
+- `Error`: mo ta loi bang code va message.
+- `Result`: ket qua thanh cong/that bai khong tra data.
+- `Result<T>`: ket qua thanh cong/that bai co tra data.
+- `IValidationResult`: danh dau ket qua loi validation.
+- `ValidationResult`: ket qua loi validation khong tra data.
+- `ValidationResult<T>`: ket qua loi validation co kieu tra ve.
+
+## 7. Setup Application
+
+Trong `DemoCICD.Application`, tao cac thu muc:
+
+- `Abstractions`
+- `Abstractions/Message`
+- `Behaviors`
+- `DependencyInjection`
+- `UseCases`
+
+### Cai MediatR
+
+Cai package:
+
+- `MediatR`
+
+MediatR dung de gui command/query den dung handler.
+
+### Tao CQRS abstraction
+
+Trong `Abstractions/Message`, tao:
+
+- `ICommand`
+- `ICommand<TResponse>`
+- `ICommandHandler<TCommand>`
+- `ICommandHandler<TCommand, TResponse>`
+- `IQuery<TResponse>`
+- `IQueryHandler<TQuery, TResponse>`
+
+Y nghia:
+
+- `Command`: yeu cau lam thay doi du lieu.
+- `Query`: yeu cau doc du lieu.
+- `Handler`: noi xu ly command/query.
+
+Day la lop boc lai MediatR de code doc ro hon theo CQRS.
+
+### Tao UseCases
+
+Trong `UseCases`, chia theo version va nghiep vu.
+
+Vi du:
+
+- `UseCases/V1/Commands/Product/CreateProductCommand`
+- `UseCases/V1/Commands/Product/CreateProductCommandHandler`
+- `UseCases/V1/Commands/Product/CreateProductCommandValidator`
+- `UseCases/V1/Queries/Product/GetProductsQuery`
+- `UseCases/V1/Queries/Product/GetProductsQueryHandler`
+- `UseCases/V1/Queries/Product/GetProductsResponse`
+
+Quy uoc:
+
+- Mot command/query dai dien cho mot use case.
+- Mot command/query co mot handler rieng.
+- Neu can validate thi tao validator rieng cho command/query do.
+
+## 8. Bo sung validation trong Application
+
+Validation dung de kiem tra du lieu dau vao truoc khi handler xu ly nghiep vu.
+
+Vi du:
+
+- Tao product thi ten khong duoc rong.
+- Update product thi id phai hop le.
+- Query danh sach thi page size phai nam trong gioi han cho phep.
+
+### Cai FluentValidation
+
+Trong `Application`, cai package:
+
+- `FluentValidation`
+
+Package nay dung de viet rule validate cho command/query.
+
+### Tao validator
+
+Voi moi command/query can validate, tao mot validator tuong ung.
+
+Vi du:
+
+- `CreateProductCommand`
+- `CreateProductCommandValidator`
+
+Validator chua cac rule nhu:
+
+- Required.
+- Max length.
+- Min/max value.
+- Format.
+- Business rule don gian cho input.
+
+### Tao ValidationPipelineBehavior
+
+Trong `Behaviors`, tao:
+
+- `ValidationPipelineBehavior<TRequest, TResponse>`
+
+Y nghia:
+
+- La pipeline chay truoc handler.
+- Tu dong tim validator cua request hien tai.
+- Neu input sai thi tra `ValidationResult`.
+- Neu input dung thi request moi di tiep vao handler.
+
+Luong xu ly:
+
+- API goi `mediator.Send`.
+- Request di qua `ValidationPipelineBehavior`.
+- Pipeline chay validator.
+- Neu hop le thi goi handler.
+- Neu khong hop le thi tra loi validation.
+
+## 9. Setup API
+
+Trong `DemoCICD.API`, cau hinh:
+
+- `AddControllers`
+- `AddSwaggerGen`
+- `AddMediatR`
+- `AddValidatorsFromAssembly`
+- `IPipelineBehavior<,>` map voi `ValidationPipelineBehavior<,>`
+- `MapControllers`
+
+### Cai package validation registration
+
+Trong `API`, cai package:
+
+- `FluentValidation.DependencyInjectionExtensions`
+
+Package nay cung cap `AddValidatorsFromAssembly`.
+
+Y nghia:
+
+- Scan `Application` assembly.
+- Tim cac validator.
+- Dang ky validator vao DI container.
+
+Luu y:
+
+- `FluentValidation` chi dung de viet validator.
+- `FluentValidation.DependencyInjectionExtensions` dung de dang ky validator vao DI.
+- Neu thieu package nay thi `AddValidatorsFromAssembly` se bao loi.
+
+## 10. Setup Infrastructure
+
+Trong `DemoCICD.Infrastructure`, implement cac service ha tang.
+
+Vi du:
+
+- Email service.
+- File service.
+- Cache service.
+- Token service.
+- Date time provider.
+
+Nen tao extension method:
+
+- `AddInfrastructure`
+
+Muc dich la gom DI registration cua Infrastructure vao mot noi.
+
+## 11. Setup Persistence
+
+Trong `DemoCICD.Persistence`, tao cac thanh phan lien quan database.
+
+Vi du:
+
+- `ApplicationDbContext`
+- Entity configuration.
+- Repository implementation.
+- Migration.
+
+Neu dung Entity Framework Core thi cai package EF Core phu hop voi database dang dung.
+
+Nen tao extension method:
+
+- `AddPersistence`
+
+Muc dich la dang ky DbContext va repository vao DI container.
+
+## 12. Setup Presentation
+
+Trong `DemoCICD.Presentation`, dat cac thanh phan lien quan den presentation/API endpoint neu muon tach khoi project `API`.
+
+Vi du:
+
+- Controller.
+- Endpoint.
+- Route group.
+- Request/response mapping.
+
+Presentation nen goi use case thong qua `Application`, khong chua business logic.
+
+## 13. Setup Contract
+
+Trong `DemoCICD.Contract`, dat cac DTO dung chung.
+
+Vi du:
+
+- `ApiResponse`
+- `PaginationRequest`
+- `PaginationResponse`
+- `CreateProductRequest`
+- `ProductResponse`
+
+Contract chi nen chua object don gian, khong chua business logic.
+
+## 14. Tao project test trong tests
+
+Tao project:
+
+- `DemoCICD.Infrastructure.Tests`
+
+Template:
+
+- `xUnit Test Project`
+
+Muc dich:
+
+- Viet unit test.
+- Viet architecture test.
+- Kiem tra dependency giua cac layer.
+
+## 15. Cai package cho test project
+
+Cai NuGet package:
+
+- `FluentAssertions`
+- `NetArchTest.Rules`
+
+Y nghia:
+
+- `FluentAssertions`: giup viet assert de doc hon.
+- `NetArchTest.Rules`: giup viet architecture test de kiem tra dependency rule.
+
+## 16. Reference test project toi cac project can kiem tra
+
+`DemoCICD.Infrastructure.Tests` reference:
+
+- `DemoCICD.API`
+- `DemoCICD.Application`
+- `DemoCICD.Domain`
+- `DemoCICD.Infrastructure`
+- `DemoCICD.Persistence`
+- `DemoCICD.Presentation`
+- `DemoCICD.Contract`
+
+Ly do:
+
+- Test project can doc assembly cua cac project nay.
+- Architecture test se dua vao do de kiem tra layer nao duoc phep phu thuoc layer nao.
+
+## 17. Viet architecture test trong ArchitectureTests.cs
+
+Trong project `DemoCICD.Infrastructure.Tests`, tao file:
+
+- `ArchitectureTests.cs`
+
+## 18. Publish API
+
+Publish project:
+
+- `DemoCICD.API`
+
+Folder publish can co:
+
+- `DemoCICD.API.dll`
+- `DemoCICD.API.deps.json`
+- `DemoCICD.API.runtimeconfig.json`
+- `appsettings.json`
+- `web.config`
+
+Luu y:
+
+- `web.config` can thiet khi deploy len IIS.
+- Khong nen copy source code truc tiep len IIS, nen deploy folder publish.
+
+## 19. Deploy len IIS
+
+IIS la `Internet Information Services`, web server cua Windows. No dung de host website/API va nhan request tu trinh duyet hoac client.
+
+Deploy len IIS nghia la dua ban publish cua project `DemoCICD.API` len mot thu muc tren may Windows, sau do cau hinh IIS tro website vao thu muc do de nguoi dung co the truy cap API bang domain, localhost hoac IP.
+
+Voi ASP.NET Core, IIS khong chay truc tiep code C# nhu ASP.NET Framework cu. IIS dong vai tro nhan request, sau do chuyen request vao ung dung ASP.NET Core thong qua `ASP.NET Core Module`. Vi vay can:
+
+- Cai `.NET Hosting Bundle` de IIS biet cach chay ASP.NET Core app.
+- Publish project API de tao file chay duoc tren server.
+- Cau hinh website, binding, App Pool va quyen truy cap thu muc deploy.
+
+Thu tu:
+
+1. Cai .NET Hosting Bundle dung version voi project.
+2. Publish project API.
+3. Copy folder publish sang thu muc deploy, vi du:
+   C:\WWW\DemoCICD\BE\DEV
+4. Them host vao file:
+   C:\Windows\System32\drivers\etc\hosts
+
+   Vi du:
+   127.0.0.1    democicd.dev.com
+
+5. Tao website tren IIS.
+6. Tro physical path toi folder publish/deploy.
+7. Cau hinh binding:
+   Host name: democicd.dev.com
+   Port: 80
+   Protocol: http
+
+8. Cau hinh App Pool:
+   .NET CLR version: No Managed Code
+   Managed pipeline mode: Integrated
+
+9. Cap quyen read/execute cho App Pool vao folder deploy.
+10. Restart IIS hoac recycle App Pool.
+11. Truy cap:
+    http://democicd.dev.com/swagger
+
+Neu chi truy cap bang `localhost` hoac IP thi khong can sua file `hosts`.
+
+Vi du:
+
+- `http://localhost`
+- `http://127.0.0.1`
+
+Neu dung domain tu dat nhu `http://democicd.dev.com`, may tinh can biet domain do tro ve dau. Voi local dev, them vao file `hosts`:
 
 ```text
-DemoCICD/
-+-- .editorconfig
-+-- .gitignore
-+-- Directory.Build.props
-+-- DemoCICD.sln
-+-- solution items/
-+-- src/
-|   +-- DemoCICD.API/
-|   +-- DemoCICD.Application/
-|   +-- DemoCICD.Domain/
-|   +-- DemoCICD.Infrastructure/
-|   +-- DemoCICD.Persistence/
-|   +-- DemoCICD.Presentation/
-+-- tests/
-    +-- DemoCICD.Infrastructure.Tests/
+127.0.0.1    democicd.dev.com
 ```
 
-Ghi chu trong repo hien tai: dang co mot so ten bi sai chinh ta nhu `Insfrastructure`, `Infrastucture`, `Infrastruction`. Nen thong nhat thanh `Infrastructure` de de doc code, de viet test va tranh loi reference ve sau.
-
-## 2. Tao solution tren Visual Studio
-
-1. Mo Visual Studio.
-2. Chon `Create a new project`.
-3. Tim template `Blank Solution`.
-4. Chon `Next`.
-5. Dat ten solution la `DemoCICD`.
-6. Chon location la thu muc ban muon luu project.
-7. Chon `Create`.
-
-Sau buoc nay, Visual Studio se tao file:
-
-```text
-DemoCICD.sln
-```
-
-## 3. Tao 3 Solution Folder
-
-Trong `Solution Explorer`:
-
-1. Click chuot phai vao solution `DemoCICD`.
-2. Chon `Add` -> `New Solution Folder`.
-3. Dat ten folder la `solution items`.
-4. Lap lai thao tac tren de tao them:
-   - `src`
-   - `tests`
-
-Ket qua trong `Solution Explorer` se co:
-
-```text
-Solution 'DemoCICD'
-+-- solution items
-+-- src
-+-- tests
-```
-
-## 4. Tao cac project trong folder src
-
-Tat ca project source code nen nam trong solution folder `src`.
-
-### 4.1. Tao project Domain
-
-1. Click chuot phai vao solution folder `src`.
-2. Chon `Add` -> `New Project`.
-3. Tim template `Class Library`.
-4. Chon ngon ngu `C#`.
-5. Dat project name la `DemoCICD.Domain`.
-6. O phan `Location`, chon thu muc `DemoCICD/src`.
-7. Chon framework, vi du `.NET 8.0`.
-8. Chon `Create`.
-
-`Domain` la layer trong cung, chua entity, value object, domain event, interface thuan domain. Layer nay khong reference project nao khac.
-
-### 4.2. Tao project Application
-
-1. Click chuot phai vao solution folder `src`.
-2. Chon `Add` -> `New Project`.
-3. Chon template `Class Library`.
-4. Dat project name la `DemoCICD.Application`.
-5. Location: `DemoCICD/src`.
-6. Framework: cung version voi project Domain.
-7. Chon `Create`.
-
-`Application` chua use case, command, query, DTO, validator, service interface. Layer nay duoc reference `Domain`.
-
-### 4.3. Tao project Infrastructure
-
-1. Click chuot phai vao solution folder `src`.
-2. Chon `Add` -> `New Project`.
-3. Chon template `Class Library`.
-4. Dat project name la `DemoCICD.Infrastructure`.
-5. Location: `DemoCICD/src`.
-6. Chon `Create`.
-
-`Infrastructure` chua implementation cho cac service ben ngoai, vi du email, file storage, message broker, cache, third-party client.
-
-### 4.4. Tao project Persistence
-
-1. Click chuot phai vao solution folder `src`.
-2. Chon `Add` -> `New Project`.
-3. Chon template `Class Library`.
-4. Dat project name la `DemoCICD.Persistence`.
-5. Location: `DemoCICD/src`.
-6. Chon `Create`.
-
-`Persistence` chua database context, migration, repository implementation, entity configuration.
-
-### 4.5. Tao project Presentation
-
-1. Click chuot phai vao solution folder `src`.
-2. Chon `Add` -> `New Project`.
-3. Chon template `Class Library`.
-4. Dat project name la `DemoCICD.Presentation`.
-5. Location: `DemoCICD/src`.
-6. Chon `Create`.
-
-`Presentation` co the chua endpoint grouping, request/response model, controller helper hoac UI-facing logic tuy cach ban tach layer.
-
-### 4.6. Tao project API
-
-1. Click chuot phai vao solution folder `src`.
-2. Chon `Add` -> `New Project`.
-3. Tim template `ASP.NET Core Web API`.
-4. Dat project name la `DemoCICD.API`.
-5. Location: `DemoCICD/src`.
-6. Chon framework cung version voi cac project con lai.
-7. Chon `Create`.
-
-`API` la project startup, chua `Program.cs`, config DI, middleware, swagger, controller hoac minimal API.
-
-## 5. Thiet lap Project Reference tren Visual Studio
-
-Nguyen tac reference nen theo chieu tu ngoai vao trong:
-
-```text
-Domain: khong reference project nao
-Application: reference Domain
-Infrastructure: reference Application, Domain
-Persistence: reference Application, Domain
-Presentation: reference Application
-API: reference Application, Infrastructure, Persistence, Presentation
-Test project: reference tat ca project can kiem tra architecture
-```
-
-### 5.1. Them reference cho Application
-
-1. Trong `Solution Explorer`, mo project `DemoCICD.Application`.
-2. Click chuot phai vao `Dependencies`.
-3. Chon `Add Project Reference`.
-4. Tick `DemoCICD.Domain`.
-5. Chon `OK`.
-
-### 5.2. Them reference cho Infrastructure
-
-1. Mo project `DemoCICD.Infrastructure`.
-2. Click chuot phai `Dependencies`.
-3. Chon `Add Project Reference`.
-4. Tick:
-   - `DemoCICD.Application`
-   - `DemoCICD.Domain`
-5. Chon `OK`.
-
-### 5.3. Them reference cho Persistence
-
-1. Mo project `DemoCICD.Persistence`.
-2. Click chuot phai `Dependencies`.
-3. Chon `Add Project Reference`.
-4. Tick:
-   - `DemoCICD.Application`
-   - `DemoCICD.Domain`
-5. Chon `OK`.
-
-### 5.4. Them reference cho Presentation
-
-1. Mo project `DemoCICD.Presentation`.
-2. Click chuot phai `Dependencies`.
-3. Chon `Add Project Reference`.
-4. Tick `DemoCICD.Application`.
-5. Chon `OK`.
-
-### 5.5. Them reference cho API
-
-1. Mo project `DemoCICD.API`.
-2. Click chuot phai `Dependencies`.
-3. Chon `Add Project Reference`.
-4. Tick:
-   - `DemoCICD.Application`
-   - `DemoCICD.Infrastructure`
-   - `DemoCICD.Persistence`
-   - `DemoCICD.Presentation`
-5. Chon `OK`.
-
-## 6. Tao file AssemblyReference cho moi project
-
-File `AssemblyReference.cs` giup architecture test lay dung assembly cua tung layer.
-
-Vi du voi project `DemoCICD.Domain`:
-
-1. Click chuot phai vao project `DemoCICD.Domain`.
-2. Chon `Add` -> `Class`.
-3. Dat ten file la `AssemblyReference.cs`.
-4. Thay noi dung file bang:
-
-```csharp
-using System.Reflection;
-
-namespace DemoCICD.Domain;
-
-public static class AssemblyReference
-{
-    public static readonly Assembly Assembly = typeof(AssemblyReference).Assembly;
-}
-```
-
-Lap lai cho cac project khac, chi thay namespace cho dung:
-
-```text
-DemoCICD.Application
-DemoCICD.Infrastructure
-DemoCICD.Persistence
-DemoCICD.Presentation
-DemoCICD.API
-```
-
-## 7. Tao project test trong folder tests
-
-1. Click chuot phai vao solution folder `tests`.
-2. Chon `Add` -> `New Project`.
-3. Tim template `xUnit Test Project`.
-4. Dat project name la `DemoCICD.Infrastructure.Tests`.
-5. Location: `DemoCICD/tests`.
-6. Chon framework cung version voi solution, vi du `.NET 8.0`.
-7. Chon `Create`.
-
-Neu Visual Studio tao file test mac dinh nhu `UnitTest1.cs`, ban co the doi ten thanh `ArchitectureTests.cs`.
-
-## 8. Cai NuGet package cho test project
-
-Can cai them:
-
-```text
-FluentAssertions
-NetArchTest.Rules
-```
-
-Cach cai tren Visual Studio:
-
-1. Click chuot phai vao project `DemoCICD.Infrastructure.Tests`.
-2. Chon `Manage NuGet Packages`.
-3. Chon tab `Browse`.
-4. Tim `FluentAssertions`.
-5. Chon package `FluentAssertions`.
-6. Chon version on dinh moi phu hop voi project.
-7. Chon `Install`.
-8. Lap lai voi package `NetArchTest.Rules`.
-9. Neu Visual Studio hien hop thoai license, chon `I Accept`.
-
-Sau khi cai xong, file `.csproj` cua test project se co cac `PackageReference` tuong ung.
-
-## 9. Reference test project toi cac project can kiem tra
-
-1. Mo project `DemoCICD.Infrastructure.Tests`.
-2. Click chuot phai vao `Dependencies`.
-3. Chon `Add Project Reference`.
-4. Tick tat ca project:
-   - `DemoCICD.API`
-   - `DemoCICD.Application`
-   - `DemoCICD.Domain`
-   - `DemoCICD.Infrastructure`
-   - `DemoCICD.Persistence`
-   - `DemoCICD.Presentation`
-5. Chon `OK`.
-
-Ly do test project reference tat ca project: architecture test can doc assembly cua cac layer de kiem tra dependency rule.
-
-## 10. Viet architecture test dau tien
-
-Trong project `DemoCICD.Infrastructure.Tests`:
-
-1. Doi ten file test thanh `ArchitectureTests.cs`.
-2. Mo file do.
-3. Thay noi dung bang:
-
-```csharp
-using FluentAssertions;
-using NetArchTest.Rules;
-
-namespace DemoCICD.Infrastructure.Tests;
-
-public class ArchitectureTests
-{
-    private const string ApplicationNamespace = "DemoCICD.Application";
-    private const string InfrastructureNamespace = "DemoCICD.Infrastructure";
-    private const string PersistenceNamespace = "DemoCICD.Persistence";
-    private const string APINamespace = "DemoCICD.API";
-    private const string PresentationNamespace = "DemoCICD.Presentation";
-
-    [Fact]
-    public void Domain_Should_Not_HaveDependencyOnOtherProjects()
-    {
-        var otherProjects = new[]
-        {
-            ApplicationNamespace,
-            InfrastructureNamespace,
-            PersistenceNamespace,
-            APINamespace,
-            PresentationNamespace
-        };
-
-        var result = Types
-            .InAssembly(DemoCICD.Domain.AssemblyReference.Assembly)
-            .ShouldNot()
-            .HaveDependencyOnAny(otherProjects)
-            .GetResult();
-
-        result.IsSuccessful.Should().BeTrue();
-    }
-}
-```
-
-Test nay dam bao layer `Domain` khong phu thuoc vao `Application`, `Infrastructure`, `Persistence`, `API`, `Presentation`.
-
-## 11. Chay test bang Test Explorer
-
-1. Tren thanh menu Visual Studio, chon `Test`.
-2. Chon `Test Explorer`.
-3. Neu chua thay test, chon `Build` -> `Build Solution`.
-4. Trong cua so `Test Explorer`, chon `Run All`.
-5. Kiem tra ket qua:
-   - Mau xanh: test pass.
-   - Mau do: test fail, can doc message loi de sua dependency hoac namespace.
-
-## 12. Them .editorconfig vao solution
-
-File `.editorconfig` dung de thong nhat coding convention cho toan bo solution.
-
-Cach them tren Visual Studio:
-
-1. Click chuot phai vao solution `DemoCICD`.
-2. Chon `Add` -> `New Item`.
-3. Tim `EditorConfig File`.
-4. Dat ten file la `.editorconfig`.
-5. Chon `Add`.
-
-Neu Visual Studio khong hien template `.editorconfig`:
-
-1. Click chuot phai vao solution.
-2. Chon `Add` -> `New Item`.
-3. Chon `Text File`.
-4. Dat ten file la `.editorconfig`.
-5. Chon `Add`.
-
-Sau do them file vao solution folder `solution items`:
-
-1. Click chuot phai vao solution folder `solution items`.
-2. Chon `Add` -> `Existing Item`.
-3. Chon file `.editorconfig`.
-4. Chon `Add`.
-
-## 13. Them Directory.Build.props cho analyzer va smell code
-
-File `Directory.Build.props` dat cung cap voi file `.sln`. MSBuild tu dong ap dung file nay cho cac project con.
-
-Cach tao tren Visual Studio:
-
-1. Click chuot phai vao solution.
-2. Chon `Add` -> `New Item`.
-3. Chon `Text File`.
-4. Dat ten file la `Directory.Build.props`.
-5. Chon `Add`.
-6. Dan noi dung sau vao file:
-
-```xml
-<Project>
-  <PropertyGroup>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <AnalysisMode>All</AnalysisMode>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" Condition="$(MSBuildProjectExtension) == '.csproj'" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.7.0.75501" PrivateAssets="all" Condition="$(MSBuildProjectExtension) == '.csproj'" />
-  </ItemGroup>
-</Project>
-```
-
-Them file nay vao solution folder `solution items`:
-
-1. Click chuot phai vao `solution items`.
-2. Chon `Add` -> `Existing Item`.
-3. Chon `Directory.Build.props`.
-4. Chon `Add`.
-
-Sau khi them file nay, moi lan build Visual Studio se restore analyzer package va hien warning ve code style, smell code, rule cua SonarAnalyzer.
-
-## 14. Tao .gitignore de khong day file rac len Git
-
-Trong project .NET, khong nen day cac file sau len Git:
-
-```text
-.vs/
-bin/
-obj/
-TestResults/
-coverage/
-*.user
-*.suo
-*.log
-```
-
-Cach tao `.gitignore` tren Visual Studio:
-
-1. Click chuot phai vao solution.
-2. Chon `Add` -> `New Item`.
-3. Chon `Text File`.
-4. Dat ten file la `.gitignore`.
-5. Chon `Add`.
-6. Dan noi dung co ban:
-
-```gitignore
-[Bb]in/
-[Oo]bj/
-.vs/
-TestResults/
-coverage/
-coverage.*
-*.coverage
-*.trx
-*.user
-*.suo
-*.log
-*.tmp
-*.cache
-.DS_Store
-Thumbs.db
-Desktop.ini
-```
-
-Trong repo hien tai da co file `.gitignore`, nen Visual Studio Git Changes se khong hien `bin/`, `obj/`, `.vs/` de commit nua.
-
-## 15. Loai bo file rac dang bi hien trong Git Changes
-
-Neu trong `Git Changes` van thay file rac:
-
-1. Kiem tra file do co nam trong `.gitignore` chua.
-2. Neu la `.vs`, `bin`, `obj`, `TestResults`, khong commit.
-3. Dong Visual Studio neu can xoa thu muc `.vs` vi thu muc nay hay bi Visual Studio lock.
-4. Mo lai Visual Studio.
-5. Kiem tra lai `Git Changes`.
-
-Neu file rac da tung bi add/tracked truoc do, `.gitignore` khong tu go no ra khoi Git. Khi hoc CI/CD, cach de hieu don gian la:
-
-```text
-.gitignore chi chan file chua tracked.
-File da tracked thi phai remove khoi tracking truoc, sau do .gitignore moi co tac dung.
-```
-
-Co the xu ly bang Visual Studio:
-
-1. Mo `Git Changes`.
-2. Neu thay file rac, click chuot phai vao file.
-3. Chon `Delete` neu do la output build co the tao lai.
-4. Commit thay doi xoa file rac cung voi `.gitignore`.
-
-## 16. Build solution tren Visual Studio
-
-1. Tren thanh menu, chon `Build`.
-2. Chon `Build Solution`.
-3. Mo cua so `Output`.
-4. Chon output tu `Build`.
-5. Kiem tra:
-   - Khong co compile error.
-   - Analyzer warning co the xuat hien do `Directory.Build.props`.
-   - Neu warning qua nhieu, sua dan theo rule.
-
-## 17. Chay API de kiem tra nhanh
-
-1. Click chuot phai vao project `DemoCICD.API`.
-2. Chon `Set as Startup Project`.
-3. Nhan nut Run mau xanh tren Visual Studio.
-4. Chon profile HTTPS neu co.
-5. Neu Swagger duoc bat, trinh duyet se mo trang swagger cua API.
-
-## 18. Kiem tra truoc khi commit
-
-Truoc khi commit:
-
-1. Chon `Build` -> `Build Solution`.
-2. Chon `Test` -> `Test Explorer` -> `Run All`.
-3. Mo `Git Changes`.
-4. Kiem tra danh sach file thay doi.
-5. Chi commit:
-   - Source code `.cs`.
-   - Project file `.csproj`.
-   - Solution file `.sln`.
-   - `.editorconfig`.
-   - `Directory.Build.props`.
-   - `.gitignore`.
-   - File test.
-   - File huong dan `.md`.
-6. Khong commit:
-   - `.vs/`
-   - `bin/`
-   - `obj/`
-   - `TestResults/`
-   - file `.user`
-   - file log/cache.
-
-## 19. Goi y sua repo hien tai
-
-Repo hien tai nen sua tiep cac diem sau:
-
-- Doi ten `DemoCICD.Insfrastructure` thanh `DemoCICD.Infrastructure`.
-- Doi ten `DemoCICD.Infrastucture.Tests` thanh `DemoCICD.Infrastructure.Tests`.
-- Doi namespace `DemoCICD.Infrastruction` trong test thanh `DemoCICD.Infrastructure`.
-- Dua `DemoCICD.Persistence` vao trong `src/` de dung cau truc `src`.
-- Sau khi doi ten, mo file `.sln` bang Visual Studio va kiem tra lai project reference.
-
-## 20. Thu tu lam bai de de nho
-
-1. Tao blank solution.
-2. Tao solution folder `solution items`, `src`, `tests`.
-3. Tao cac project trong `src`.
-4. Them project reference dung chieu Clean Architecture.
-5. Tao `AssemblyReference.cs` cho tung project.
-6. Tao xUnit test project trong `tests`.
-7. Cai `FluentAssertions` va `NetArchTest.Rules`.
-8. Viet architecture test.
-9. Them `.editorconfig`.
-10. Them `Directory.Build.props`.
-11. Them `.gitignore`.
-12. Build solution.
-13. Run all tests.
-14. Kiem tra `Git Changes`.
-15. Commit source code, khong commit file rac.
+Neu gap HTTP 500, can kiem tra:
+
+- Da cai Hosting Bundle chua.
+- Folder publish co `web.config` chua.
+- App Pool da de `No Managed Code` chua.
+- App co loi start khong.
+- Can bat stdout log de xem loi chi tiet neu IIS chi tra 500 chung chung.

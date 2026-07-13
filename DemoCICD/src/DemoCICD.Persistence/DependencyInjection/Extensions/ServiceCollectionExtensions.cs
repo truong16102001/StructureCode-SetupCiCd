@@ -1,4 +1,9 @@
-﻿using DemoCICD.Persistence.DependencyInjection.Options;
+﻿using DemoCICD.Domain.Abstractions;
+using DemoCICD.Domain.Abstractions.Repositories;
+using DemoCICD.Domain.Entities.Identity;
+using DemoCICD.Persistence.DependencyInjection.Options;
+using DemoCICD.Persistence.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +18,7 @@ public static class ServiceCollectionExtensions
         {
             var configuration = provider.GetRequiredService<IConfiguration>();
 
-            var options = provider.GetRequiredService<IOptionsMonitor<SqlServerRetryOption>>();
+            var options = provider.GetRequiredService<IOptionsMonitor<SqlServerRetryOptions>>();
 
             #region ============== SQL-SERVER-STRATEGY-1 ==============
 
@@ -36,13 +41,37 @@ public static class ServiceCollectionExtensions
 
 
         });
+
+        services.AddIdentityCore<AppUser>()
+            .AddRoles<AppRole>()
+            .AddEntityFrameworkStores<ApplicationDbContext>();
+
+        services.Configure<IdentityOptions>(options =>
+        {
+            options.Lockout.AllowedForNewUsers = true; // default true
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2); // default 5
+            options.Lockout.MaxFailedAccessAttempts = 3; // default 3
+            options.Password.RequireDigit = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequiredLength = 6;
+            options.Password.RequiredUniqueChars = 1;
+        });
     }
 
-    public static OptionsBuilder<SqlServerRetryOption> ConfigureSqlServerRetryOptions(this IServiceCollection services, IConfigurationSection section)
+    public static OptionsBuilder<SqlServerRetryOptions> 
+        ConfigureSqlServerRetryOptions(this IServiceCollection services, IConfigurationSection section)
     {
-        return services.AddOptions<SqlServerRetryOption>()
+        return services.AddOptions<SqlServerRetryOptions>()
             .Bind(section)
             .ValidateDataAnnotations()
             .ValidateOnStart();
+    }
+
+    public static void AddRepositoryBaseConfiguration(this IServiceCollection services)
+    {
+        services.AddTransient(typeof(IUnitOfWork), typeof(EFUnitOfWork));
+        services.AddTransient(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>));
     }
 }

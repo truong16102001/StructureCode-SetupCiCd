@@ -11,23 +11,24 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution items", "solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		Directory.Build.props = Directory.Build.props
+		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCICD.Application", "src\DemoCICD.Application\DemoCICD.Application.csproj", "{5DF715E5-D904-40CD-B3AF-FBD145559B9E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCICD.Application", "src\DemoCICD.Application\DemoCICD.Application.csproj", "{5DF715E5-D904-40CD-B3AF-FBD145559B9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCICD.Domain", "src\DemoCICD.Domain\DemoCICD.Domain.csproj", "{FE591E68-38DE-471D-90DF-97DDA3CAD69E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCICD.Domain", "src\DemoCICD.Domain\DemoCICD.Domain.csproj", "{FE591E68-38DE-471D-90DF-97DDA3CAD69E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCICD.Infrastructure", "src\DemoCICD.Insfrastructure\DemoCICD.Infrastructure.csproj", "{9A098221-0B52-42CA-8850-02CBEAC46B03}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCICD.Infrastructure", "src\DemoCICD.Insfrastructure\DemoCICD.Infrastructure.csproj", "{9A098221-0B52-42CA-8850-02CBEAC46B03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCICD.Presentation", "src\DemoCICD.Presentation\DemoCICD.Presentation.csproj", "{48F122A8-188B-4E6F-9856-CC57BC8EC6AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCICD.Presentation", "src\DemoCICD.Presentation\DemoCICD.Presentation.csproj", "{48F122A8-188B-4E6F-9856-CC57BC8EC6AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCICD.Infrastructure.Tests", "tests\DemoCICD.Infrastucture.Tests\DemoCICD.Infrastructure.Tests.csproj", "{349382A2-AD1B-44A1-A1BE-AA0F48DFB945}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCICD.Infrastructure.Tests", "tests\DemoCICD.Infrastucture.Tests\DemoCICD.Infrastructure.Tests.csproj", "{349382A2-AD1B-44A1-A1BE-AA0F48DFB945}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCICD.Persistence", "src\DemoCICD.Persistence\DemoCICD.Persistence.csproj", "{F2CFB647-2714-48EE-8532-E283DE0F3E80}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCICD.Persistence", "src\DemoCICD.Persistence\DemoCICD.Persistence.csproj", "{F2CFB647-2714-48EE-8532-E283DE0F3E80}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCICD.API", "src\DemoCICD.API\DemoCICD.API.csproj", "{FCF9F601-0099-4D65-9E4B-CAF9C5F58BC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCICD.API", "src\DemoCICD.API\DemoCICD.API.csproj", "{FCF9F601-0099-4D65-9E4B-CAF9C5F58BC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCICD.Contract", "src\DemoCICD.Contact\DemoCICD.Contract.csproj", "{D92DD15D-0FEF-4E3A-9EB6-1E677CFADD61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoCICD.Contract", "src\DemoCICD.Contact\DemoCICD.Contract.csproj", "{D92DD15D-0FEF-4E3A-9EB6-1E677CFADD61}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

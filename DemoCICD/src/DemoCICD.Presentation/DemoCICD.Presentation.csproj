@@ -7,8 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.11" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DemoCICD.Application\DemoCICD.Application.csproj" />
     <ProjectReference Include="..\DemoCICD.Insfrastructure\DemoCICD.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\V1\" />
+    <Folder Include="Controllers\V2\" />
   </ItemGroup>
 
 </Project>

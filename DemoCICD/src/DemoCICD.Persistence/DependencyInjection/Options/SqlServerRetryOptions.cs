@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace DemoCICD.Persistence.DependencyInjection.Options;
-public class SqlServerRetryOption
+public class SqlServerRetryOptions
 {
     [Required, Range(5, 20)]
     public int MaxRetryCount { get; set; }

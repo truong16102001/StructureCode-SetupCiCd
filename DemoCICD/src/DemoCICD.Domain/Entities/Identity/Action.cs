@@ -1,7 +1,7 @@
 ﻿namespace DemoCICD.Domain.Entities.Identity;
 public class Action
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; }
 
     public string Name { get; set; }
 

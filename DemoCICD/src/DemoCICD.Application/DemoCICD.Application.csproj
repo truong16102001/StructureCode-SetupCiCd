@@ -7,19 +7,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DemoCICD.Contact\DemoCICD.Contract.csproj" />
     <ProjectReference Include="..\DemoCICD.Domain\DemoCICD.Domain.csproj" />
+    <ProjectReference Include="..\DemoCICD.Persistence\DemoCICD.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DependencyInjection\Extensions\" />
+    <Folder Include="Asbtractions\Message\" />
     <Folder Include="DependencyInjection\Options\" />
+    <Folder Include="Exceptions\" />
     <Folder Include="Usercases\V1\Commands\Order\" />
     <Folder Include="Usercases\V1\Queries\Order\" />
     <Folder Include="Usercases\V2\" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="12.1.1" />
+	<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+	<PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="MediatR" Version="14.2.0" />
   </ItemGroup>
 

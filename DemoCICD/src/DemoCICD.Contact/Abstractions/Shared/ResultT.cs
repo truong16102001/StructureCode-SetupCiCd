@@ -1,4 +1,4 @@
-﻿namespace DemoCICD.Domain.Shared;
+﻿namespace DemoCICD.Contract.Shared;
 public class Result<T> : Result
 {
     private readonly T? _value;

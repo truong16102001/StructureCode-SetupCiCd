@@ -1,4 +1,4 @@
-﻿namespace DemoCICD.Domain.Shared;
+﻿namespace DemoCICD.Contract.Shared;
 public interface IValidationResult
 {
     Error[] Errors { get; }

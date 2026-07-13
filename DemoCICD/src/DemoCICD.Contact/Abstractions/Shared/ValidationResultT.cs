@@ -1,4 +1,4 @@
-﻿namespace DemoCICD.Domain.Shared;
+﻿namespace DemoCICD.Contract.Shared;
 public sealed class ValidationResult<TValue> : Result<TValue>, IValidationResult
 {
     private ValidationResult(Error[] errors)

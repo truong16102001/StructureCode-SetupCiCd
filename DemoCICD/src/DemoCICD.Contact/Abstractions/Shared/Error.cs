@@ -1,4 +1,4 @@
-﻿namespace DemoCICD.Domain.Shared;
+﻿namespace DemoCICD.Contract.Shared;
 public class Error : IEquatable<Error>
 {
     public static readonly Error None = new(string.Empty, string.Empty);

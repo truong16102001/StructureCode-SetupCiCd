@@ -17,11 +17,13 @@ public sealed class GetProductsQueryHandler : IQueryHandler<Query.GetProducts, L
         _mapper = mapper;
         _productRepository = productRepository;
     }
+
     public async Task<Result<List<Response.ProductResponse>>> Handle(Query.GetProducts request, CancellationToken cancellationToken)
     {
         var products = await _productRepository.FindAll().ToListAsync();
 
         var result = _mapper.Map<List<Response.ProductResponse>>(products);
-        return result;
+
+        return Result.Success(result);
     }
 }

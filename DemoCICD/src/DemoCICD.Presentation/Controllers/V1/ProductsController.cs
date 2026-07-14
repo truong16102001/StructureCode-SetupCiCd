@@ -18,18 +18,18 @@ public class ProductsController : ApiController
     [HttpGet(Name = "GetProducts")]
     [ProducesResponseType(typeof(Result<IEnumerable<Response.ProductResponse>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Products(string? serchTerm = null,
-        string? sortColumn = null,
-        string? sortOrder = null,
-        string? sortColumnAndOrder = null,
-        int pageIndex = 1,
-        int pageSize = 10)
+    public async Task<IActionResult> GetProducts()
     {
-        var result = await Sender.Send(new Query.GetProducts(serchTerm, sortColumn,
-            SortOrderExtension.ConvertStringToSortOrder(sortOrder),
-            SortOrderExtension.ConvertStringToSortOrderV2(sortColumnAndOrder),
-            pageIndex,
-            pageSize));
+        var result = await Sender.Send(new Query.GetProducts());
+        return Ok(result);
+    }
+
+    [HttpGet("{productId}")]
+    [ProducesResponseType(typeof(Result<Response.ProductResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProductById(Guid productId)
+    {
+        var result = await Sender.Send(new Query.GetProductById(productId));
         return Ok(result);
     }
 }

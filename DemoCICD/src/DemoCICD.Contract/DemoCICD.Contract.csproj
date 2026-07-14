@@ -12,7 +12,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Abstractions\Services\Warehourse\" />
 	  <Folder Include="Abstractions\Services\Order\" />
 	</ItemGroup>
 </Project>

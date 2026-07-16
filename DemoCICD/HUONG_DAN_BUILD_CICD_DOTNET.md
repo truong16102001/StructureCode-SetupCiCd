@@ -1,258 +1,182 @@
 # Huong dan build project .NET Clean Architecture va chuan bi CI/CD
-
+Tai lieu nay huong dan cach doc va cach tao source `DemoCICD` theo trinh tu hop ly cua Clean Architecture.
 ## CI/CD la gi?
+- CI/CD la cach tu dong hoa qua trinh build, test va deploy phan mem.
+    - CI la Continuous Integration: moi khi code duoc day len repository, he thong tu dong restore package, build project va chay test de phat hien loi som.
+    - CD la Continuous Delivery/Continuous Deployment: sau khi CI thanh cong, he thong co the tu dong tao ban publish va day ung dung len moi truong deploy nhu IIS, server dev, staging hoac production.
 
-CI/CD la cach tu dong hoa qua trinh build, test va deploy phan mem.
+- Muc tieu cua CI/CD:
+    - Giam loi khi build/deploy thu cong.
+    - Dam bao code moi khong lam hong kien truc hoac test hien co.
+    - Giup qua trinh dua code tu may dev len server nhanh va on dinh hon.
 
-- `CI` la `Continuous Integration`: moi khi code duoc day len repository, he thong tu dong restore package, build project va chay test de phat hien loi som.
-- `CD` la `Continuous Delivery/Continuous Deployment`: sau khi CI thanh cong, he thong co the tu dong tao ban publish va day ung dung len moi truong deploy nhu IIS, server dev, staging hoac production.
+## Nguyen tac trien khai:
 
-Muc tieu cua CI/CD:
+```text
+Domain
+ -> Contract
+ -> Application
+ -> Persistence
+ -> Presentation
+ -> API
+ -> Tests / Build / Deploy
+```
 
-- Giam loi khi build/deploy thu cong.
-- Dam bao code moi khong lam hong kien truc hoac test hien co.
-- Giup qua trinh dua code tu may dev len server nhanh va on dinh hon.
+Ly do di theo thu tu nay:
 
-## 1. Tao cau truc thu muc solution
+- `Domain` la loi nghiep vu, tao truoc.
+- `Contract` dinh nghia request/response/validator de controller va handler dung chung.
+- `Application` tao use case va handler, dung Domain va Contract.
+- `Persistence` implement truy cap database cho abstraction cua Domain.
+- `Presentation` tao controller, goi Application thong qua MediatR.
+- `API` la project startup, luc nay moi ghep tat ca layer vao `Program.cs`.
 
-Tao 3 thu muc chinh:
-
-- `solution items`
-- `src`
-- `tests`
-
-Y nghia:
-
-- `solution items`: chua cac file cau hinh chung cua solution.
-- `src`: chua cac project source code.
-- `tests`: chua cac project test.
-
-## 2. Tao cac project trong src
-
-### DemoCICD.Domain
-
-Day la layer trong cung cua he thong.
-
-Chua:
-
-- Entity.
-- Value object.
-- Domain event.
-- Enum.
-- Interface thuan domain.
-- Cac class shared nhu `Error`, `Result`, `Result<T>`.
+## Buoc 1 - Trien khai Domain
 
 Layer nay khong reference project nao khac.
 
-### DemoCICD.Application
+### NuGet/packages dang dung trong Domain
 
-Day la layer chua use case cua he thong.
+`DemoCICD.Domain.csproj` dang dung:
 
-Chua:
+- `Microsoft.AspNetCore.Identity.EntityFrameworkCore`: cung cap cac base class/type lien quan ASP.NET Core Identity. Trong source hien tai can package nay vi Domain co cac entity identity nhu `AppUser`, `AppRole`.
 
-- Command.
-- Query.
-- Handler.
-- DTO/Response model.
-- Validator.
-- Interface service/repository can dung cho use case.
+### Abstractions/Entities/DomainEntity
 
-Layer nay reference `DemoCICD.Domain`.
-
-### DemoCICD.Infrastructure
-
-Day la layer chua cac implementation lien quan den ha tang ben ngoai.
-
-Vi du:
-
-- Email service.
-- File storage.
-- Cache.
-- Date time provider.
-- JWT/token service.
-- Third-party service.
-
-Layer nay co the reference `DemoCICD.Application`, `DemoCICD.Domain`, `DemoCICD.Persistence` tuy cach tach implementation.
-
-### DemoCICD.Persistence
-
-Day la layer lam viec voi database.
-
-Chua:
-
-- DbContext.
-- Migration.
-- Entity configuration.
-- Repository implementation.
-
-Layer nay dung de tach logic truy cap database ra khoi `Application`.
-
-### DemoCICD.Presentation
-
-Day la layer trinh bay API endpoint neu muon tach controller/endpoint ra khoi project `API`.
-
-Chua:
-
-- Controller.
-- Endpoint.
-- Route group.
-- Mapping request/response.
-
-Layer nay goi use case thong qua `Application`, thuong la qua MediatR.
-
-### DemoCICD.API
-
-Day la project startup chinh cua he thong.
-
-Chua:
-
-- `Program.cs`.
-- Cau hinh Dependency Injection.
-- Middleware.
-- Swagger.
-- Cau hinh MediatR.
-- Cau hinh validation.
-
-API khong nen chua business logic. API chi nhan request, goi use case va tra response.
-
-### DemoCICD.Contract
-
-Day la project chua cac class dung chung neu can chia se giua nhieu project.
-
-Chua:
-
-- Request DTO.
-- Response DTO.
-- Pagination model.
-- Api response model.
-
-Luu y: `Contract` chi nen chua object don gian, khong chua business logic.
-
-## 3. Thiet lap project reference
-
-Thiet lap reference theo chieu Clean Architecture:
-
-- `Domain`: khong reference project nao.
-- `Application`: reference `Domain`.
-- `Infrastructure`: reference `Application`, `Domain`, co the reference `Persistence` neu can.
-- `Persistence`: reference `Domain`, co the reference `Application` neu implement interface tu Application.
-- `Presentation`: reference `Application`.
-- `API`: reference `Application`, `Infrastructure`, `Persistence`, `Presentation`, `Contract` neu co.
-
-Muc tieu:
-
-- Layer ben trong khong phu thuoc layer ben ngoai.
-- Business core khong phu thuoc vao API, database hay framework ha tang.
-- Code de test va de thay doi implementation ve sau.
-
-## 4. Tao file AssemblyReference.cs cho moi project
-
-Tao file `AssemblyReference.cs` trong cac project:
-
-- `DemoCICD.Domain`
-- `DemoCICD.Application`
-- `DemoCICD.Infrastructure`
-- `DemoCICD.Persistence`
-- `DemoCICD.Presentation`
-- `DemoCICD.API`
-- `DemoCICD.Contract`
-
-### Assembly la gi?
-
-Trong .NET, moi project khi build se tao ra mot assembly, thuong la file `.dll`.
-
-Vi du:
-
-- `DemoCICD.Domain` build ra `DemoCICD.Domain.dll`.
-- `DemoCICD.Application` build ra `DemoCICD.Application.dll`.
-
-Assembly co the hieu don gian la file da bien dich cua mot project. Ben trong assembly co cac class, interface, enum, handler, validator... cua project do.
-
-### AssemblyReference la gi?
-
-`AssemblyReference.cs` la mot class nho dung de lay ra assembly cua project hien tai.
-
-Thay vi viet truc tiep ten assembly bang string, ta tao `AssemblyReference` de cac noi khac co the tro den assembly mot cach ro rang va an toan hon.
-
-### Dung de lam gi?
-
-`AssemblyReference` duoc dung trong 2 truong hop chinh:
-
-- Architecture test: lay assembly cua tung layer de kiem tra dependency rule.
-- MediatR/FluentValidation: scan assembly `Application` de tim handler va validator.
-
-Vi du ve y tuong:
-
-- Test muon kiem tra `Domain` co phu thuoc `Infrastructure` khong thi can lay assembly cua `Domain`.
-- MediatR muon tim cac handler thi can scan assembly cua `Application`.
-- FluentValidation muon tim cac validator thi can scan assembly cua `Application`.
-
-Luu y:
-
-- Moi project chi can tao mot file `AssemblyReference.cs`.
-- Namespace trong file phai dung voi namespace project.
-- Chi can tao class, chi tiet code xem truc tiep trong source.
-
-## 5. Tao coding convention cho solution
-
-Trong solution, them:
-
-- `.editorconfig`
-- `Directory.Build.props`
-- `.gitignore`
-
-### .editorconfig
-
-Dung de thong nhat coding convention cho toan bo solution.
-
-Vi du:
-
-- Cach dat indent.
-- Quy tac format code.
-- Quy tac style C#.
-
-### Directory.Build.props
-
-Dung de cau hinh build va analyzer ap dung cho tat ca project.
-
-Bo sung analyzer:
-
-- `SonarAnalyzer.CSharp`: check code smell.
-- `StyleCop.Analyzers`: check coding convention.
-
-### .gitignore
-
-Dung de khong day file rac len Git.
-
-Vi du:
-
-- `.vs`
-- `bin`
-- `obj`
-- `TestResults`
-- file `.user`
-- file log/cache
-
-## 6. Setup Domain
-
-Trong `DemoCICD.Domain`, tao cac thu muc:
-
-- `Abstractions`
-- `Abstractions/Entities`
-- `Abstractions/Repositories`
-- `Entities`
-- `Enumerations`
-- `Shared`
+`DomainEntity` la base class cho cac entity.
 
 Y nghia:
 
-- `Abstractions/Entities`: chua base entity/interface cho entity.
-- `Abstractions/Repositories`: chua repository interface.
-- `Entities`: chua entity chinh cua he thong.
-- `Enumerations`: chua enum dung trong domain.
-- `Shared`: chua cac class dung chung cua domain.
+- Gom cac field chung cua cac entity (`Id`, audit field, soft delete field... ) de cac entity khac ke thua
+- Repository generic co the rang buoc entity theo base type neu can.
 
-Trong `Shared`, tao:
+### Entities/Product
+
+`Product` la model nghiep vu cho san pham.
+
+Dung de lam gi:
+
+- Persistence map `Product` thanh table.
+- Handler tao, doc, cap nhat, xoa product.
+- AutoMapper map `Product` sang `Response.ProductResponse`.
+
+### Entities/Identity
+
+Thu muc `Entities/Identity` dang co:
+
+- `AppUser`, `AppRole`, `Permission`, `Function`, `Action`, `ActionInFunction`
+
+Dung de lam gi:
+
+- Persistence se map cac entity nay thanh table identity/permission.
+- Sau nay API co the them login, role, permission, authorize theo function/action.
+
+### Abstractions/Repositories/IRepositoryBase
+
+`IRepositoryBase<TEntity, TKey>` la abstraction cho thao tac truy cap data.
+
+Hien tai interface co cac ham:
+
+- `FindByIdAsync`, `FindSingleAsync`, `FindAll`, `Add`, `Update`, `Remove`, `RemoveMultiple`
+
+Dung de lam gi:
+
+- Persistence se tao class `RepositoryBase` implement interface nay.
+- Handler trong Application sẽ gọi qua interface, khong phu thuoc truc tiep `DbContext`.
+
+### Abstractions/IUnitOfWork
+
+`IUnitOfWork` la abstraction cho viec commit thay doi xuong database.
+
+Dung de lam gi:
+
+- Persistence implement bang `EFUnitOfWork`.
+- Khi create/update/delete product, handler thay doi entity qua repository.
+- Sau do handler goi unit of work de luu thay doi Nhieu repository/action co the commit trong mot unit..
+
+### Exceptions
+
+Bao gồm:
+
+- `DomainException`, `BadRequestException`, `NotFoundException`, `ProductException`,...
+
+Dung de lam gi:
+
+- Middleware bat exception va tra response loi thong nhat.
+
+### AssemblyReference
+
+Moi project co `AssemblyReference.cs`.
+
+Y nghia:
+
+- Lay assembly cua project hien tai mot cach ro rang.
+- Dung cho MediatR, FluentValidation, AutoMapper hoac architecture test khi can scan assembly.
+
+## Buoc 2 - Trien khai Contract
+
+Sau Domain, tao `DemoCICD.Contract`.
+
+Contract la hop dong giao tiep giua API/Presentation va Application. No dinh nghia input, output, result va validation rule.
+
+Layer nay khong reference project nao khac.
+
+### NuGet/packages dang dung trong Contract
+
+`DemoCICD.Contract.csproj` dang dung:
+
+- `MediatR`: de cac interface `ICommand`, `IQuery` boc lai request/handler cua MediatR.
+- `FluentValidation`: de viet cac validator nhu `CreateProductValidator`, `UpdateProductValidator`.
+
+### Abstractions/Message
+
+Thu muc nay dang co:
+
+- `ICommand`, `ICommandHandler`,  `IQuery`, `IQueryHandler`
+
+Dung de lam gi:
+- Boc lai MediatR theo ngon ngu CQRS.
+- Handler trong Application implement `ICommandHandler` hoac `IQueryHandler`.
+
+Noi ro hon:
+
+- MediatR la thu vien giup gui mot request den dung handler ma controller khong can `new` handler truc tiep.
+- CQRS tach request thanh 2 nhom: `Command` cho thao tac lam thay doi du lieu, `Query` cho thao tac doc du lieu.
+- "Boc lai MediatR" nghia la minh tao interface rieng cua project nhu `ICommand`, `IQuery`, `ICommandHandler`, `IQueryHandler`, ben trong chung van dua tren MediatR.
+- Loi ich la code doc theo ngon ngu nghiep vu cua project. Thay vi nhin dau dau cung la `IRequest`, minh nhin vao la biet request nay la command hay query.
+
+Vi du de hieu:
+
+```text
+CreateProduct la Command vi no tao moi du lieu.
+GetProducts la Query vi no chi doc danh sach san pham.
+CreateProductCommandHandler xu ly CreateProduct.
+GetProductsQueryHandler xu ly GetProducts.
+```
+
+Neu khong boc lai, code van co the dung truc tiep MediatR:
+
+```text
+CreateProduct : IRequest<Result>
+```
+
+Khi boc lai theo CQRS, code doc ro hon:
+
+```text
+CreateProduct : ICommand<Result>
+```
+
+Flow:
+
+```text
+Controller tao Command/Query
+ -> Sender.Send(...)
+ -> MediatR tim Handler tuong ung
+```
+
+### Abstractions/Shared
+
+Thu muc nay dang co:
 
 - `Error`
 - `Result`
@@ -263,347 +187,859 @@ Trong `Shared`, tao:
 
 Y nghia:
 
-- `Error`: mo ta loi bang code va message.
-- `Result`: ket qua thanh cong/that bai khong tra data.
-- `Result<T>`: ket qua thanh cong/that bai co tra data.
-- `IValidationResult`: danh dau ket qua loi validation.
-- `ValidationResult`: ket qua loi validation khong tra data.
-- `ValidationResult<T>`: ket qua loi validation co kieu tra ve.
+- Thong nhat cach tra ket qua thanh cong/that bai.
+- Handler co the tra loi nghiep vu bang `Result` thay vi nem exception cho moi truong hop.
+- Controller doc `IsSuccess`, `IsFailure`, `Error` de quyet dinh HTTP response.
 
-## 7. Setup Application
+Dung de lam gi:
 
-Trong `DemoCICD.Application`, tao cac thu muc:
+- Create thanh cong: tra `Result.Success`.
+- Get list thanh cong: tra `Result<List<ProductResponse>>`.
+- Loi validation: tra `ValidationResult`.
+- Loi nghiep vu: tra `Result.Failure(error)`.
 
-- `Abstractions`
-- `Abstractions/Message`
-- `Behaviors`
-- `DependencyInjection`
-- `UseCases`
+### Abstractions/Services/Product/Command
 
-### Cai MediatR
+`Command.cs` chua cac request ghi du lieu cua Product.
 
-Cai package:
+Vi du:
 
-- `MediatR`
-
-MediatR dung de gui command/query den dung handler.
-
-### Tao CQRS abstraction
-
-Trong `Abstractions/Message`, tao:
-
-- `ICommand`
-- `ICommand<TResponse>`
-- `ICommandHandler<TCommand>`
-- `ICommandHandler<TCommand, TResponse>`
-- `IQuery<TResponse>`
-- `IQueryHandler<TQuery, TResponse>`
+- `CreateProduct`
+- `UpdateProduct`
+- `DeleteProduct`
 
 Y nghia:
 
-- `Command`: yeu cau lam thay doi du lieu.
-- `Query`: yeu cau doc du lieu.
-- `Handler`: noi xu ly command/query.
+- Dinh nghia input cho cac thao tac lam thay doi product.
+- Presentation va Application dung chung mot contract.
+- Controller khong can tao class request rieng neu contract da du.
 
-Day la lop boc lai MediatR de code doc ro hon theo CQRS.
+Dung de lam gi:
 
-### Tao UseCases
+- `ProductsController.CreateProduct` nhan body va tao `Command.CreateProduct`.
+- Application handler nhan command nay va xu ly tao product.
 
-Trong `UseCases`, chia theo version va nghiep vu.
+### Abstractions/Services/Product/Query
 
-Vi du:
-
-- `UseCases/V1/Commands/Product/CreateProductCommand`
-- `UseCases/V1/Commands/Product/CreateProductCommandHandler`
-- `UseCases/V1/Commands/Product/CreateProductCommandValidator`
-- `UseCases/V1/Queries/Product/GetProductsQuery`
-- `UseCases/V1/Queries/Product/GetProductsQueryHandler`
-- `UseCases/V1/Queries/Product/GetProductsResponse`
-
-Quy uoc:
-
-- Mot command/query dai dien cho mot use case.
-- Mot command/query co mot handler rieng.
-- Neu can validate thi tao validator rieng cho command/query do.
-
-## 8. Bo sung validation trong Application
-
-Validation dung de kiem tra du lieu dau vao truoc khi handler xu ly nghiep vu.
+`Query.cs` chua cac request doc du lieu cua Product.
 
 Vi du:
 
-- Tao product thi ten khong duoc rong.
-- Update product thi id phai hop le.
-- Query danh sach thi page size phai nam trong gioi han cho phep.
-
-### Cai FluentValidation
-
-Trong `Application`, cai package:
-
-- `FluentValidation`
-
-Package nay dung de viet rule validate cho command/query.
-
-### Tao validator
-
-Voi moi command/query can validate, tao mot validator tuong ung.
-
-Vi du:
-
-- `CreateProductCommand`
-- `CreateProductCommandValidator`
-
-Validator chua cac rule nhu:
-
-- Required.
-- Max length.
-- Min/max value.
-- Format.
-- Business rule don gian cho input.
-
-### Tao ValidationPipelineBehavior
-
-Trong `Behaviors`, tao:
-
-- `ValidationPipelineBehavior<TRequest, TResponse>`
+- `GetProducts`
+- `GetProductById`
 
 Y nghia:
 
-- La pipeline chay truoc handler.
+- Dinh nghia input cho cac thao tac doc product.
+- Tach ro query va command.
+
+Dung de lam gi:
+
+- `ProductsController.GetProducts` tao `Query.GetProducts`.
+- `ProductsController.GetProductById` tao `Query.GetProductById`.
+- Application handler nhan query va tra response.
+
+### Abstractions/Services/Product/Response
+
+`Response.cs` chua DTO tra ve cho client.
+
+Y nghia:
+
+- Khong tra truc tiep entity `Product` ra API, chi expose field can thiet
+- Neu entity thay doi, API response khong nhat thiet bi thay doi theo.
+
+Dung de lam gi:
+
+- Handler map entity `Product` sang `Response.ProductResponse`.
+- Controller tra response nay cho client.
+
+### Product Validators
+
+Thu muc validators dang co:
+
+- `CreateProductValidator`
+- `UpdateProductValidator`
+- `DeleteProductValidator`
+- `GetProductByIdValidator`
+
+Y nghia:
+
+- Kiem tra input truoc khi vao handler.
+- Rule validation nam gan voi command/query.
+- Controller khong can viet `if` validation lap lai.
+
+Dung de lam gi:
+
+- Validate ten product, gia, id...
+- Neu input sai, `ValidationPipelineBehavior` trong Application chan request truoc handler.
+
+## Buoc 3 - Trien khai Application
+
+Sau khi co Domain va Contract, tao `DemoCICD.Application`.
+
+Application chua use case cua he thong. No xu ly business flow, goi repository abstraction, map response, validate request thong qua pipeline.
+
+Layer nay reference project `DemoCICD.Domain`, `DemoCICD.Contract`.
+
+### NuGet/packages dang dung trong Application
+
+`DemoCICD.Application.csproj` dang dung:
+
+- `MediatR`: de dang ky va chay command/query handler.
+- `FluentValidation`: de lam viec voi validator.
+- `FluentValidation.DependencyInjectionExtensions`: cung cap `AddValidatorsFromAssembly` de scan va dang ky validator vao DI.
+- `AutoMapper`: de map entity sang response DTO.
+- `AutoMapper.Extensions.Microsoft.DependencyInjection`: cung cap `AddAutoMapper` de dang ky AutoMapper vao DI.
+
+### Usercases/V1/Commands/Product
+
+Dang co:
+
+- `CreateProductCommand.cs`
+- `CreateProductCommandHandler.cs`
+
+Y nghia:
+
+- Chua use case tao product.
+- Handler nhan command tu Contract.
+- Handler thao tac voi repository/unit of work cua Domain.
+
+Dung de lam gi: 
+
+```text
+Command.CreateProduct
+ -> CreateProductCommandHandler
+ -> IRepositoryBase.Add(product)
+ -> IUnitOfWork.SaveChangesAsync(...)
+ -> Result
+```
+
+### Usercases/V1/Queries/Product
+
+Dang co:
+
+- `GetProductsQueryHandler.cs`
+- `GetProductByIdQueryHandler.cs`
+
+Y nghia:
+
+- Chua use case doc product.
+- Handler goi repository de lay data.
+- Handler map entity sang response DTO.
+
+Dung de lam gi:
+
+```text
+Query.GetProducts
+ -> GetProductsQueryHandler
+ -> IRepositoryBase.FindAll(...)
+ -> AutoMapper map Product -> ProductResponse
+ -> Result<List<ProductResponse>>
+```
+
+### Behavious/ValidationPipelineBehaviour
+
+`ValidationPipelineBehavior<TRequest, TResponse>` la pipeline cua MediatR.
+
+Y nghia:
+
+- Chay validation truoc handler.
 - Tu dong tim validator cua request hien tai.
-- Neu input sai thi tra `ValidationResult`.
-- Neu input dung thi request moi di tiep vao handler.
+- Neu input sai thi tra validation error hoac nem validation exception theo implementation.
+- Neu input dung thi moi goi handler.
 
-Luong xu ly:
+Dung de lam gi:
 
-- API goi `mediator.Send`.
-- Request di qua `ValidationPipelineBehavior`.
-- Pipeline chay validator.
-- Neu hop le thi goi handler.
-- Neu khong hop le thi tra loi validation.
+```text
+Sender.Send(request)
+ -> ValidationPipelineBehavior
+ -> FluentValidation validator trong Contract
+ -> Handler
+```
 
-## 9. Setup API
+### Exceptions/ValidationException
 
-Trong `DemoCICD.API`, cau hinh:
-
-- `AddControllers`
-- `AddSwaggerGen`
-- `AddMediatR`
-- `AddValidatorsFromAssembly`
-- `IPipelineBehavior<,>` map voi `ValidationPipelineBehavior<,>`
-- `MapControllers`
-
-### Cai package validation registration
-
-Trong `API`, cai package:
-
-- `FluentValidation.DependencyInjectionExtensions`
-
-Package nay cung cap `AddValidatorsFromAssembly`.
+`ValidationException` bieu dien loi validation o application layer.
 
 Y nghia:
 
-- Scan `Application` assembly.
-- Tim cac validator.
-- Dang ky validator vao DI container.
+- Co type rieng cho loi validation.
+- Middleware co the bat va tra response dung format.
+- Tach loi validation khoi loi system.
+
+Khac gi voi `ValidationPipelineBehavior`:
+
+- `ValidationPipelineBehavior` la nguoi thuc thi validation. No nam tren duong di cua MediatR, chay truoc handler, lay validator ra de kiem tra request.
+- `ValidationException` la ket qua loi duoc bieu dien bang exception khi validation fail. No khong tu chay validation, no chi mang thong tin loi.
+
+Vi du de hieu:
+
+```text
+CreateProduct request di vao
+ -> ValidationPipelineBehavior chay CreateProductValidator
+ -> Neu Name rong/Gia sai
+ -> Tao hoac nem ValidationException
+ -> ExceptionHandlingMiddleware bat loi
+ -> Tra ve HTTP 400 kem danh sach loi
+```
+
+Co the hieu ngan gon:
+
+```text
+ValidationPipelineBehavior = noi kiem tra
+ValidationException = loi duoc nem/tra ra khi kiem tra that bai
+```
+
+### Mapper/ServiceProfile
+
+`ServiceProfile` la AutoMapper profile.
+
+Y nghia:
+
+- Cau hinh map giua entity va response DTO.
+- Giam mapping thu cong trong handler.
+
+### DependencyInjection/Extensions/ServiceCollectionExtensions
+
+Sau khi da co handler, pipeline, validator, mapper thi moi tao extension DI cho Application.
+
+Dang co 2 method:
+
+- `AddConfigureMediatR`
+- `AddConfigurationAutoMapper`
+
+`AddConfigureMediatR` lam gi:
+
+- Scan Application assembly de dang ky MediatR handlers.
+- Dang ky `ValidationPipelineBehavior`.
+- Scan Contract assembly de dang ky FluentValidation validators.
+
+`AddConfigurationAutoMapper` lam gi:
+
+- Dang ky AutoMapper voi `ServiceProfile`.
+
+Y nghia:
+
+- Gom cau hinh Application vao mot noi.
+- API sau nay chi can goi `builder.Services.AddConfigureMediatR()`.
+- Khong viet tung handler, tung validator, tung pipeline trong `Program.cs`.
+
+Luu y ve trinh tu:
+
+- Khong cau hinh `AddConfigureMediatR` o API truoc khi tao handler/pipeline.
+- Khong cau hinh `AddConfigurationAutoMapper` truoc khi tao `ServiceProfile`.
+- `Program.cs` chi goi cac extension nay o buoc cuoi.
+
+## Buoc 4 - Trien khai Persistence
+
+Sau khi Domain co entity/repository abstraction va Application co handler can data, tao `DemoCICD.Persistence`.
+
+Persistence la noi implement database bang EF Core.
+
+### NuGet/packages dang dung trong Persistence
+
+`DemoCICD.Persistence.csproj` dang dung:
+
+- `Microsoft.EntityFrameworkCore`: core API cua EF Core, gom `DbContext`, `DbSet`, tracking, LINQ query.
+- `Microsoft.EntityFrameworkCore.SqlServer`: provider de EF Core ket noi SQL Server.
+- `Microsoft.EntityFrameworkCore.Proxies`: ho tro lazy loading proxies qua `UseLazyLoadingProxies`.
+- `Microsoft.Extensions.DependencyInjection`: ho tro dang ky service vao DI container.
+- `Microsoft.Extensions.Hosting`: ho tro cac abstraction lien quan host/runtime.
+- `Microsoft.Extensions.Options.ConfigurationExtensions`: bind config tu `appsettings` vao options class.
+- `Microsoft.Extensions.Options.DataAnnotations`: validate options bang data annotations.
+
+### Constants/TableNames
+
+`TableNames.cs` gom ten table vao mot noi.
+
+Y nghia:
+
+- Khong hard-code ten table rai rac trong nhieu file configuration.
+- Doi ten table thi sua o mot noi.
+- Giam typo khi mapping.
+
+Dung de lam gi:
+
+- `ProductConfiguration` dung `TableNames.Product`.
+- Identity configurations dung cac ten table identity/permission.
+
+### Configurations
+
+Thu muc `Configurations` dang co:
+
+- `ProductConfiguration`
+- `AppUserConfiguration`
+- `AppRoleConfiguration`
+- `PermissionConfiguration`
+- `FunctionConfiguration`
+- `ActionConfiguration`
+- `ActionInFunctionConfiguration`
+- `IdentityConfiguration`
+
+Y nghia:
+
+- Cau hinh EF Core mapping cho entity.
+- Dinh nghia table, key, relationship, column, constraint.
+
+### ApplicationDbContext
+
+`ApplicationDbContext` la DbContext cua EF Core.
+
+Y nghia:
+
+- La cau noi giua entity Domain va database.
+- Quan ly model EF Core.
+- Dung de tao migration va update database.
+- Apply entity configurations.
+
+### Repositories/RepositoryBase
+
+`RepositoryBase` implement `IRepositoryBase`.
+
+Y nghia:
+
+- Chuyen abstraction trong Domain thanh implementation dung EF Core.
+- Handler tiep tuc phu thuoc `IRepositoryBase`, khong phu thuoc `RepositoryBase`.
+- Neu sau nay thay EF Core bang cong nghe khac, Application it bi anh huong.
+
+Noi ro hon:
+
+- Application handler chi biet interface `IRepositoryBase`, vi du `FindAll`, `Add`, `Remove`.
+- Handler khong biet ben duoi dang dung `DbContext`, `DbSet`, SQL Server hay MongoDB.
+- EF Core chi nam trong `RepositoryBase` cua Persistence.
+- Neu sau nay doi cach truy cap data, minh tao implementation moi cho `IRepositoryBase`, con handler co the giu nguyen neu method contract khong doi.
+
+Vi du:
+
+```text
+Hien tai:
+CreateProductCommandHandler -> IRepositoryBase -> RepositoryBase -> EF Core -> SQL Server
+
+Sau nay neu doi:
+CreateProductCommandHandler -> IRepositoryBase -> DapperProductRepository -> Dapper -> SQL Server
+```
+
+Trong ca hai truong hop, handler van goi interface:
+
+```text
+repository.Add(product)
+```
+
+Handler khong can goi truc tiep:
+
+```text
+dbContext.Set<Product>().Add(product)
+```
+
+### EFUnitOfWork
+
+`EFUnitOfWork` implement `IUnitOfWork`.
+
+Y nghia:
+
+- Dong goi thao tac save changes cua EF Core.
+- Handler khong can goi truc tiep `ApplicationDbContext`.
+- Giu Application tach khoi EF Core.
+
+Noi ro hon:
+
+- Neu handler goi `ApplicationDbContext.SaveChangesAsync()` thi Application phai reference Persistence/EF Core.
+- Khi do Application biet qua nhieu ve database, lam sai huong phu thuoc cua Clean Architecture.
+- Thay vao do handler chi goi `IUnitOfWork.SaveChangesAsync(...)`.
+- Persistence quyet dinh save bang EF Core nhu the nao.
+
+Vi du flow:
+
+```text
+Handler:
+repository.Add(product)
+unitOfWork.SaveChangesAsync()
+
+Persistence:
+EFUnitOfWork.SaveChangesAsync()
+ -> ApplicationDbContext.SaveChangesAsync()
+```
+
+Nhin tu Application, no chi thay:
+
+```text
+IRepositoryBase
+IUnitOfWork
+```
+
+Nhin tu Persistence, no moi thay:
+
+```text
+ApplicationDbContext
+DbSet
+SaveChangesAsync
+```
+
+### DependencyInjection/Options/SqlServerRetryOptions
+
+`SqlServerRetryOptions` chua cau hinh retry SQL Server.
+
+Y nghia:
+
+- Dinh nghia `MaxRetryCount`, `MaxRetryDelay`, `ErrorNumbersToAdd`.
+- Cho phep config retry tu `appsettings`.
+- Tang do on dinh khi SQL Server gap loi tam thoi.
+
+Dung de lam gi:
+
+- `AddSqlConfiguration` doc option nay de tao execution strategy cho SQL Server.
+
+### DependencyInjection/Extensions/ServiceCollectionExtensions
+
+Sau khi co DbContext, repository, unit of work, options thi moi tao extension DI cho Persistence.
+
+Dang co 3 method:
+
+- `ConfigureSqlServerRetryOptions`
+- `AddSqlConfiguration`
+- `AddRepositoryBaseConfiguration`
+
+`ConfigureSqlServerRetryOptions` lam gi:
+
+- Bind section config trong `appsettings` vao `SqlServerRetryOptions`.
+- Validate option khi app start.
+
+`AddSqlConfiguration` lam gi:
+
+- Dang ky `ApplicationDbContext` voi SQL Server.
+- Bat lazy loading proxies.
+- Cau hinh retry strategy.
+- Cau hinh migrations assembly.
+- Dang ky Identity Core voi `AppUser`, `AppRole`.
+- Cau hinh password/lockout cho Identity.
+
+Noi ro hon ve lazy loading proxies:
+
+- Lazy loading la co che tu dong load du lieu lien quan khi minh truy cap navigation property.
+- Proxy la object dac biet EF Core tao ra de chen logic load du lieu vao luc truy cap property.
+- Trong source dang goi `UseLazyLoadingProxies(true)`, nen EF Core co the tu load navigation property neu entity du dieu kien.
+
+Vi du de hieu:
+
+```csharp
+var user = await dbContext.Set<AppUser>().FirstAsync();
+var roles = user.UserRoles;
+```
+
+Neu lazy loading hoat dong, luc truy cap `user.UserRoles`, EF Core co the tu query them du lieu roles ma ban chua `Include`.
+
+Dieu kien quan trong:
+
+- Navigation property can la `virtual`.
+- Entity khong bi detach khoi DbContext.
+- DbContext van con song khi truy cap navigation property.
+
+Mat loi:
+
+- Code ngan hon khi can lay du lieu lien quan.
+- Khong phai luc nao cung viet `.Include(...)`.
+
+Mat can than:
+
+- De bi sinh nhieu query am tham, goi la N+1 query.
+- Khi serialize response, neu dua entity ra API truc tiep co the vo tinh load them nhieu quan he.
+- Voi API, thuong nen map sang DTO/Response va chu dong `.Include(...)` cho cac query quan trong.
+
+`AddRepositoryBaseConfiguration` lam gi:
+
+- Dang ky `IUnitOfWork` -> `EFUnitOfWork`.
+- Dang ky `IRepositoryBase<,>` -> `RepositoryBase<,>`.
+
+Y nghia:
+
+- Gom cau hinh Persistence vao mot noi.
+- API sau nay chi can goi cac extension nay.
+- `Program.cs` khong can biet chi tiet DbContext/repository duoc tao nhu the nao.
+
+### Migrations
+
+Thu muc `Migrations` dang co:
+
+- `InitialMigration`
+- `AddProductTable`
+- `ApplicationDbContextModelSnapshot`
+
+Y nghia:
+
+- Ghi lai lich su thay doi schema database.
+- EF Core dung migration de tao/update database.
+- CI/CD co the tao SQL script tu migration.
+
+### Dung PMC de apply migration
+- Apply vào Persistence:
+- Add-Migration [MigrationName]
+- Update-Database
+- Truong hop update schema / add new table --> add-migration [new MigrationName] --> update-database
+- Xóa migration moi nhat: Remove-Migration
+- Rollback DB ve migration cu: Update-Database [InitialMigration] 
 
 Luu y:
 
-- `FluentValidation` chi dung de viet validator.
-- `FluentValidation.DependencyInjectionExtensions` dung de dang ky validator vao DI.
-- Neu thieu package nay thi `AddValidatorsFromAssembly` se bao loi.
+- `-Project DemoCICD.Persistence` vi migration va DbContext nam o Persistence.
+- `-StartupProject DemoCICD.API` vi API co appsettings, DI va runtime config.
 
-## 10. Setup Infrastructure
+## Buoc 5 - Trien khai Infrastructure
 
-Trong `DemoCICD.Infrastructure`, implement cac service ha tang.
+Sau Domain/Application/Persistence, co the tao `DemoCICD.Insfrastructure`.
 
-Vi du:
+Hien tai project nay chua nhieu logic, chu yeu la noi de mo rong service ha tang ve sau.
 
-- Email service.
-- File service.
-- Cache service.
-- Token service.
-- Date time provider.
+### NuGet/packages dang dung trong Infrastructure
 
-Nen tao extension method:
+`DemoCICD.Infrastructure.csproj` dang dung:
 
-- `AddInfrastructure`
+- `AutoMapper`: hien dang co trong project, co the dung khi service ha tang can mapping object.
 
-Muc dich la gom DI registration cua Infrastructure vao mot noi.
+Project nay dang reference:
 
-## 11. Setup Persistence
-
-Trong `DemoCICD.Persistence`, tao cac thanh phan lien quan database.
-
-Vi du:
-
-- `ApplicationDbContext`
-- Entity configuration.
-- Repository implementation.
-- Migration.
-
-Neu dung Entity Framework Core thi cai package EF Core phu hop voi database dang dung.
-
-Nen tao extension method:
-
-- `AddPersistence`
-
-Muc dich la dang ky DbContext va repository vao DI container.
-
-## 12. Setup Presentation
-
-Trong `DemoCICD.Presentation`, dat cac thanh phan lien quan den presentation/API endpoint neu muon tach khoi project `API`.
-
-Vi du:
-
-- Controller.
-- Endpoint.
-- Route group.
-- Request/response mapping.
-
-Presentation nen goi use case thong qua `Application`, khong chua business logic.
-
-## 13. Setup Contract
-
-Trong `DemoCICD.Contract`, dat cac DTO dung chung.
-
-Vi du:
-
-- `ApiResponse`
-- `PaginationRequest`
-- `PaginationResponse`
-- `CreateProductRequest`
-- `ProductResponse`
-
-Contract chi nen chua object don gian, khong chua business logic.
-
-## 14. Tao project test trong tests
-
-Tao project:
-
-- `DemoCICD.Infrastructure.Tests`
-
-Template:
-
-- `xUnit Test Project`
-
-Muc dich:
-
-- Viet unit test.
-- Viet architecture test.
-- Kiem tra dependency giua cac layer.
-
-## 15. Cai package cho test project
-
-Cai NuGet package:
-
-- `FluentAssertions`
-- `NetArchTest.Rules`
+- `DemoCICD.Application`
+- `DemoCICD.Persistence`
 
 Y nghia:
 
-- `FluentAssertions`: giup viet assert de doc hon.
-- `NetArchTest.Rules`: giup viet architecture test de kiem tra dependency rule.
+- Chua implementation cho cac service ben ngoai.
+- Vi du email, cache, file storage, token, third-party API.
+- Giu Application khong phu thuoc truc tiep vao service ben ngoai.
 
-## 16. Reference test project toi cac project can kiem tra
+Flow khi mo rong:
 
-`DemoCICD.Infrastructure.Tests` reference:
+```text
+Application khai bao interface
+ -> Infrastructure implement interface
+ -> Infrastructure dang ky DI
+ -> API goi extension cua Infrastructure
+ -> Handler dung interface
+```
 
-- `DemoCICD.API`
+## Buoc 6 - Trien khai Presentation
+
+Sau khi da co Contract va Application handler, moi tao `DemoCICD.Presentation`.
+
+Presentation la noi nhan HTTP request, bind route/body, tao command/query va goi MediatR.
+
+### NuGet/packages dang dung trong Presentation
+
+`DemoCICD.Presentation.csproj` dang dung:
+
+- `Microsoft.AspNetCore.Mvc.Core`: cung cap controller, action result, attribute API controller.
+- `Asp.Versioning.Mvc.ApiExplorer`: ho tro API versioning va API explorer cho Swagger.
+- `AutoMapper`: co san neu Presentation can map model, nhung flow hien tai mapping chinh nam o Application.
+- `Newtonsoft.Json`: ho tro JSON serialization/deserialization neu can tuy bien JSON.
+
+Project nay dang reference:
+
 - `DemoCICD.Application`
-- `DemoCICD.Domain`
-- `DemoCICD.Infrastructure`
+- `DemoCICD.Insfrastructure`
+
+### Abstractions/ApiController
+
+`ApiController` la base controller.
+
+Dang cung cap:
+
+- Attribute `[ApiController]`.
+- Route base `api/v{version:apiVersion}/[controller]`.
+- Field/property `Sender` de dung MediatR.
+- Method `HandlerFailure` de chuyen `Result` loi thanh HTTP response.
+- Tao `ProblemDetails` cho response loi.
+
+Y nghia:
+
+- Cac controller con khong lap lai route va MediatR sender.
+- Format loi thong nhat.
+- Tat ca API version dung chung base route.
+
+Dung de lam gi:
+
+- `ProductsController` ke thua `ApiController`.
+- Action goi `Sender.Send(...)`.
+- Neu result fail thi goi `HandlerFailure(result)`.
+
+### Controllers/V1/ProductsController
+
+`ProductsController` la endpoint cho product version 1.
+
+Dang expose:
+
+- `GetProducts`
+- `GetProductById`
+- `CreateProduct`
+- `UpdateProduct`
+- `DeleteProduct`
+
+Y nghia:
+
+- Nhan HTTP request cua product.
+- Khong tu query database.
+- Khong chua business logic.
+- Chi tao command/query va goi Application thong qua MediatR.
+
+Flow mot action:
+
+```text
+HTTP request
+ -> ProductsController action
+ -> tao Command/Query trong Contract
+ -> Sender.Send(...)
+ -> Application handler
+ -> tra IActionResult
+```
+
+### API versioning trong Presentation
+
+`ProductsController` gan version bang `ApiVersion(1)`.
+
+`ApiController` co route:
+
+```text
+api/v{version:apiVersion}/[controller]
+```
+
+Nen endpoint co dang:
+
+```text
+GET /api/v1/Products
+GET /api/v1/Products/{productId}
+```
+
+Y nghia:
+
+- Co the ton tai V1, V2 song song.
+- Khi them version moi, tao controller trong `Controllers/V2`.
+- Swagger co the group endpoint theo version.
+
+### Controllers/V2/OrdersController
+
+`OrdersController` trong V2 la vi du cho version/controller moi.
+
+Y nghia:
+
+- Cho thay Presentation co the tach endpoint theo version.
+- Khi co nghiep vu Order that, se tao Contract/Application handler tuong ung roi controller goi vao.
+
+## Buoc 7 - Trien khai API
+
+Sau khi Domain, Contract, Application, Persistence, Presentation da co, luc nay moi cau hinh `DemoCICD.API`.
+
+API la project startup. No khong xu ly business logic, chi ghep cac layer va cau hinh pipeline.
+
+### NuGet/packages dang dung trong API
+
+`DemoCICD.API.csproj` dang dung:
+
+- `Asp.Versioning.Http`: core package cho API versioning.
+- `Asp.Versioning.Mvc.ApiExplorer`: giup Swagger/API Explorer nhin thay cac API version.
+- `Swashbuckle.AspNetCore`: tao Swagger/OpenAPI UI.
+- `Swashbuckle.AspNetCore.Newtonsoft`: ho tro Newtonsoft.Json trong Swagger.
+- `MicroElements.Swashbuckle.FluentValidation`: dua rule FluentValidation len Swagger schema.
+- `Serilog.AspNetCore`: logging cho ASP.NET Core.
+- `Microsoft.EntityFrameworkCore.Tools`: cung cap lenh PMC/EF tools nhu `Add-Migration`, `Update-Database`.
+- `MediatR`: can khi API/DI runtime lam viec voi MediatR.
+- `AutoMapper`: can khi runtime resolve AutoMapper.
+- `FluentValidation.DependencyInjectionExtensions`: ho tro dang ky validator vao DI neu can goi o startup.
+
+Project nay dang reference:
+
+- `DemoCICD.Application`
+- `DemoCICD.Insfrastructure`
 - `DemoCICD.Persistence`
 - `DemoCICD.Presentation`
 - `DemoCICD.Contract`
 
-Ly do:
+### appsettings.json va appsettings.Development.json
 
-- Test project can doc assembly cua cac project nay.
-- Architecture test se dua vao do de kiem tra layer nao duoc phep phu thuoc layer nao.
+Dung de chua config runtime.
 
-## 17. Viet architecture test trong ArchitectureTests.cs
+Dang dung cho:
 
-Trong project `DemoCICD.Infrastructure.Tests`, tao file:
+- Serilog.
+- Connection string.
+- SqlServerRetryOptions.
+- Config theo moi truong.
 
-- `ArchitectureTests.cs`
+Y nghia:
 
-## 18. Publish API
+- Local/dev/staging/production co config rieng.
+- Connection string khong hard-code trong code.
+- Deploy IIS/CI/CD co the override bang environment variable hoac file config rieng.
 
-Publish project:
+### Middleware/ExceptionHandlingMiddleware
 
-- `DemoCICD.API`
+`ExceptionHandlingMiddleware` bat loi tap trung.
 
-Folder publish can co:
+Y nghia:
 
-- `DemoCICD.API.dll`
-- `DemoCICD.API.deps.json`
-- `DemoCICD.API.runtimeconfig.json`
-- `appsettings.json`
-- `web.config`
+- Controller khong can try/catch lap lai.
+- Exception domain/application duoc map thanh HTTP response.
+- Response loi co format thong nhat.
 
-Luu y:
-
-- `web.config` can thiet khi deploy len IIS.
-- Khong nen copy source code truc tiep len IIS, nen deploy folder publish.
-
-## 19. Deploy len IIS
-
-IIS la `Internet Information Services`, web server cua Windows. No dung de host website/API va nhan request tu trinh duyet hoac client.
-
-Deploy len IIS nghia la dua ban publish cua project `DemoCICD.API` len mot thu muc tren may Windows, sau do cau hinh IIS tro website vao thu muc do de nguoi dung co the truy cap API bang domain, localhost hoac IP.
-
-Voi ASP.NET Core, IIS khong chay truc tiep code C# nhu ASP.NET Framework cu. IIS dong vai tro nhan request, sau do chuyen request vao ung dung ASP.NET Core thong qua `ASP.NET Core Module`. Vi vay can:
-
-- Cai `.NET Hosting Bundle` de IIS biet cach chay ASP.NET Core app.
-- Publish project API de tao file chay duoc tren server.
-- Cau hinh website, binding, App Pool va quyen truy cap thu muc deploy.
-
-Thu tu:
-
-1. Cai .NET Hosting Bundle dung version voi project.
-2. Publish project API.
-3. Copy folder publish sang thu muc deploy, vi du:
-   C:\WWW\DemoCICD\BE\DEV
-4. Them host vao file:
-   C:\Windows\System32\drivers\etc\hosts
-
-   Vi du:
-   127.0.0.1    democicd.dev.com
-
-5. Tao website tren IIS.
-6. Tro physical path toi folder publish/deploy.
-7. Cau hinh binding:
-   Host name: democicd.dev.com
-   Port: 80
-   Protocol: http
-
-8. Cau hinh App Pool:
-   .NET CLR version: No Managed Code
-   Managed pipeline mode: Integrated
-
-9. Cap quyen read/execute cho App Pool vao folder deploy.
-10. Restart IIS hoac recycle App Pool.
-11. Truy cap:
-    http://democicd.dev.com/swagger
-
-Neu chi truy cap bang `localhost` hoac IP thi khong can sua file `hosts`.
-
-Vi du:
-
-- `http://localhost`
-- `http://127.0.0.1`
-
-Neu dung domain tu dat nhu `http://democicd.dev.com`, may tinh can biet domain do tro ve dau. Voi local dev, them vao file `hosts`:
+Flow:
 
 ```text
-127.0.0.1    democicd.dev.com
+Request vao middleware
+ -> goi next(context)
+ -> neu controller/handler nem exception
+ -> middleware catch
+ -> log loi
+ -> tra JSON error response
 ```
 
-Neu gap HTTP 500, can kiem tra:
+### SwaggerExtensions va ConfigureSwaggerOptions
 
-- Da cai Hosting Bundle chua.
-- Folder publish co `web.config` chua.
-- App Pool da de `No Managed Code` chua.
-- App co loi start khong.
-- Can bat stdout log de xem loi chi tiet neu IIS chi tra 500 chung chung.
+`SwaggerExtensions` gom cau hinh Swagger vao extension method.
+
+`ConfigureSwaggerOptions` cau hinh Swagger theo API version.
+
+Y nghia:
+
+- `Program.cs` gon hon.
+- Khi co `v1`, `v2`, Swagger tao document theo version.
+- De mo rong JWT, security schema, description...
+
+### Program.cs
+
+Sau khi cac layer da san sang, `Program.cs` moi goi DI extension.
+
+Hien tai `Program.cs` lam cac viec theo thu tu:
+
+1. Tao builder.
+2. Cau hinh Serilog.
+3. Dang ky Swagger.
+4. Dang ky API versioning.
+5. Goi `AddConfigureMediatR` cua Application.
+6. Goi `ConfigureSqlServerRetryOptions` cua Persistence.
+7. Goi `AddSqlConfiguration` cua Persistence.
+8. Goi `AddRepositoryBaseConfiguration` cua Persistence.
+9. Goi `AddConfigurationAutoMapper` cua Application.
+10. Dang ky controller tu Presentation bang `AddApplicationPart`.
+11. Build app.
+12. Cau hinh middleware pipeline.
+13. Map controllers.
+14. Run app.
+
+Y nghia:
+
+- API la composition root.
+- API ghep Application, Persistence, Presentation lai voi nhau.
+- API khong can biet chi tiet handler/repository/validator duoc implement nhu the nao.
+
+## Flow request sau khi hoan thanh
+
+Vi du request:
+
+```text
+GET /api/v1/Products
+```
+
+Flow chi tiet:
+
+```text
+Client
+ -> DemoCICD.API middleware pipeline
+ -> DemoCICD.Presentation ProductsController
+ -> tao Query.GetProducts trong Contract
+ -> MediatR ISender.Send(...)
+ -> Application ValidationPipelineBehavior
+ -> Contract validator neu co
+ -> Application GetProductsQueryHandler
+ -> Domain IRepositoryBase abstraction
+ -> Persistence RepositoryBase implementation
+ -> Persistence ApplicationDbContext
+ -> Database
+ -> AutoMapper map Product -> ProductResponse
+ -> Result<T>
+ -> Controller tra HTTP response
+```
+
+Y nghia:
+
+- Controller khong dung truc tiep `DbContext`.
+- Handler khong biet SQL Server/EF Core chi tiet.
+- Contract quy dinh input/output.
+- Persistence chiu trach nhiem database.
+- API chi cau hinh va host app.
+
+## Test project
+
+`DemoCICD.Infrastructure.Tests` dung de chua:
+
+- Unit test.
+- Architecture test.
+
+Dang dung:
+
+- `xunit`
+- `FluentAssertions`
+- `NetArchTest.Rules`
+- `coverlet.collector`
+
+### NuGet/packages dang dung trong Tests
+
+`DemoCICD.Infrastructure.Tests.csproj` dang dung:
+
+- `xunit`: framework viet test.
+- `xunit.runner.visualstudio`: cho Visual Studio/Test Explorer chay xUnit test.
+- `Microsoft.NET.Test.Sdk`: SDK de dotnet test/Test Explorer nhan dien test project.
+- `FluentAssertions`: viet assert de doc hon.
+- `NetArchTest.Rules`: viet architecture test, kiem tra dependency giua cac layer.
+- `coverlet.collector`: thu thap code coverage khi chay test.
+- `AutoMapper`: ho tro test lien quan mapping neu can.
+- `Newtonsoft.Json`: ho tro test lien quan JSON neu can.
+
+`ArchitectureTests.cs` dung de check dependency rule giua cac layer.
+
+Y nghia:
+
+- Dam bao Domain khong phu thuoc API/Persistence.
+- Dam bao cac layer khong bi reference nguoc.
+- Dam bao convention cua project khong bi pha khi them code moi.
+
+## Publish va deploy IIS
+
+IIS la Internet Information Services, web server cua Windows. No dung de host website/API va nhan request tu trinh duyet hoac client.
+
+Deploy len IIS nghia la dua ban publish cua project DemoCICD.API len mot thu muc tren may Windows, sau do cau hinh IIS tro website vao thu muc do de nguoi dung co the truy cap API bang domain, localhost hoac IP.
+
+Voi ASP.NET Core, IIS khong chay truc tiep code C# nhu ASP.NET Framework cu. IIS dong vai tro nhan request, sau do chuyen request vao ung dung ASP.NET Core thong qua ASP.NET Core Module. Vi vay can:
+
+Cai .NET Hosting Bundle de IIS biet cach chay ASP.NET Core app.
+Publish project API de tao file chay duoc tren server.
+Cau hinh website, binding, App Pool va quyen truy cap thu muc deploy.
+
+Thu tu:
+1. Cai .NET Hosting Bundle dung version voi project.
+
+2. Publish project API.
+
+3. Copy folder publish sang thu muc deploy, vi du: C:\WWW\DemoCICD\BE\DEV
+
+4. Them host vao file: C:\Windows\System32\drivers\etc\hosts
+    Vi du: 127.0.0.1 democicd.dev.com
+
+5. Tao website tren IIS.
+    - Tro physical path toi folder publish/deploy.
+    - Cau hinh binding: Host name: democicd.dev.com Port: 80 Protocol: http
+    - Cau hinh App Pool: .NET CLR version: No Managed Code Managed pipeline mode: Integrated
+    - Cap quyen read/execute cho App Pool vao folder deploy.
+    - Restart IIS hoac recycle App Pool.
+
+6. Truy cap: http://democicd.dev.com/swagger
+Neu chi truy cap bang localhost hoac IP thi khong can sua file hosts.
+
+    Vi du:
+        http://localhost
+        http://127.0.0.1
+Neu dung domain tu dat nhu http://democicd.dev.com, may tinh can biet domain do tro ve dau. Voi local dev, them vao file hosts:
+    127.0.0.1    democicd.dev.com
+
+7. Neu gap HTTP 500, can kiem tra:
+    Da cai Hosting Bundle chua.
+    Folder publish co web.config chua.
+    App Pool da de No Managed Code chua.
+    App co loi start khong.
+    Can bat stdout log de xem loi chi tiet neu IIS chi tra 500 chung chung.

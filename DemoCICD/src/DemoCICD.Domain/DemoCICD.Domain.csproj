@@ -7,8 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Enumerations\" />
-    <Folder Include="Shared\" />
+    <Compile Remove="Enumerations\**" />
+    <EmbeddedResource Remove="Enumerations\**" />
+    <None Remove="Enumerations\**" />
   </ItemGroup>
 
   <ItemGroup>

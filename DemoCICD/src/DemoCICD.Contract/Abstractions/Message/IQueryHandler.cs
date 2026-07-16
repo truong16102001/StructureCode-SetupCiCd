@@ -2,7 +2,7 @@
 using MediatR;
 
 namespace DemoCICD.Contract.Asbtractions.Message;
-public interface IQueryHandler<TQuery, TResponse>: IRequestHandler<TQuery, Result<TResponse>>  
+public interface IQueryHandler<TQuery, TResponse> : IRequestHandler<TQuery, Result<TResponse>>
     where TQuery : IQuery<TResponse>
 {
 }

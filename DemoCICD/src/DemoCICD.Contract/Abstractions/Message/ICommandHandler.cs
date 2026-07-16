@@ -2,7 +2,7 @@
 using MediatR;
 
 namespace DemoCICD.Contract.Asbtractions.Message;
-public interface ICommandHandler<TCommand> : IRequestHandler<TCommand, Result> 
+public interface ICommandHandler<TCommand> : IRequestHandler<TCommand, Result>
     where TCommand : ICommand
 {
 }

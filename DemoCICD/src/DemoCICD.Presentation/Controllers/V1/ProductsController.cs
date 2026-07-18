@@ -1,5 +1,7 @@
 ﻿using Asp.Versioning;
 using DemoCICD.Contract.Abstractions.Services.Product;
+using DemoCICD.Contract.Enumerations;
+using DemoCICD.Contract.Extensions;
 using DemoCICD.Contract.Shared;
 using DemoCICD.Presentation.Abstractions;
 using MediatR;
@@ -18,9 +20,14 @@ public class ProductsController : ApiController
     [HttpGet(Name = "GetProducts")]
     [ProducesResponseType(typeof(Result<IEnumerable<Response.ProductResponse>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetProducts()
+    public async Task<IActionResult> GetProducts(string? searchTerm = null, 
+        string? sortColumn = null, string? sortOrder = null, string? sortColumnAndOrder = null, int pageIndex = 1, int pageSize = 10)
     {
-        var result = await Sender.Send(new Query.GetProducts());
+        var result = await Sender.Send(new Query.GetProducts(searchTerm, sortColumn,
+            SortOrderExtension.ConvertStringToSortOrder(sortOrder),
+            SortOrderExtension.ConvertStringToMultipleSortOrder(sortColumnAndOrder),
+            pageIndex,
+            pageSize));
         return Ok(result);
     }
 

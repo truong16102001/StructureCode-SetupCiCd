@@ -273,13 +273,144 @@ Dung de lam gi:
 - Validate ten product, gia, id...
 - Neu input sai, `ValidationPipelineBehavior` trong Application chan request truoc handler.
 
+### Bo sung Search, Sort nhieu dieu kien va Paging trong Contract
+
+Phan filter/list product duoc dat contract o `DemoCICD.Contract` de Presentation va Application dung chung mot kieu request/response.
+
+#### Ardalis.SmartEnum
+
+Contract cai them:
+
+- `Ardalis.SmartEnum`
+
+Dung de tao `SortOrder` ro nghia hon so voi viec truyen string thu cong.
+
+`SortOrder` hien co:
+
+- `Ascending`: sort tang dan.
+- `Descending`: sort giam dan.
+
+Y nghia:
+
+- Client co the gui `ASC` hoac `DESC`.
+- Controller convert input thanh `SortOrder`.
+- Handler chi lam viec voi kieu `SortOrder`, khong phai xu ly string lung tung.
+
+#### Contract.Enumerations.SortOrder
+
+`SortOrder` la enumeration dai dien cho chieu sap xep.
+
+Dung de lam gi:
+
+- Chuan hoa sort tang/giam trong toan bo flow.
+- Giam typo khi dung `"ASC"`/`"DESC"`.
+- De mo rong neu sau nay can them logic cho sort.
+
+#### Contract.Extensions.SortOrderExtension
+
+`SortOrderExtension` dung de convert query string thanh du lieu sort ma Application co the xu ly.
+
+Dang ho tro:
+
+- Sort mot cot: `sortColumn=name&sortOrder=ASC`.
+- Sort nhieu cot: `sortColumnAndOrder=name-ASC,price-DESC`.
+
+Voi sort nhieu cot, extension convert chuoi thanh dictionary:
+
+```text
+Name  -> Ascending
+Price -> Descending
+```
+
+Y nghia:
+
+- Controller khong can parse logic sort phuc tap.
+- Handler nhan du lieu sort da duoc chuan hoa.
+- Neu format sai, extension co the bao loi format.
+
+#### Contract.Extensions.ProductExtension
+
+`ProductExtension` dung de map ten cot client gui len sang property that cua `Product`.
+
+Vi du:
+
+- `name` -> `Name`
+- `price` -> `Price`
+- `description` -> `Description`
+- mac dinh -> `Id`
+
+Y nghia:
+
+- Gioi han cac cot duoc phep sort.
+- Tranh client truyen ten cot tuy y.
+- Giu mapping sort cua Product o mot noi.
+
+#### Update Query.GetProducts
+
+`GetProducts` trong `Contract.Abstractions.Services.Product.Query` duoc update de nhan:
+
+- `SearchTerm`: tu khoa tim kiem.
+- `SortColumn`: cot sort don.
+- `SortOrder`: chieu sort don.
+- `SortColumnAndOrder`: danh sach sort nhieu cot.
+- `PageIndex`: trang hien tai.
+- `PageSize`: so item moi trang.
+
+Ket qua tra ve:
+
+- `PagedResult<ProductResponse>`
+
+Y nghia:
+
+- Query contract mo ta day du input can cho search/sort/paging.
+- Handler trong Application khong phai doc truc tiep HTTP query string.
+- API response tra ve ca data va thong tin phan trang.
+
+#### Abstractions/Shared/PagedResult
+
+`PagedResult<T>` la model tra ve ket qua da phan trang.
+
+Chua:
+
+- `Items`: danh sach item cua trang hien tai.
+- `PageIndex`: trang hien tai.
+- `PageSize`: so item moi trang.
+- `TotalCount`: tong so item.
+- `HasNextPage`: co trang tiep theo hay khong.
+- `HasPreviousPage`: co trang truoc hay khong.
+
+Gia tri mac dinh:
+
+- `DefaultPageIndex = 1`
+- `DefaultPageSize = 10`
+- `UpperPageSize = 100`
+
+Paging dung de lam gi:
+
+- Khong tra ve toan bo du lieu trong mot request.
+- Giam tai cho database va API.
+- Giup UI/client hien thi du lieu theo tung trang.
+
+Cong thuc paging:
+
+```text
+Skip = (PageIndex - 1) * PageSize
+Take = PageSize
+```
+
+Vi du:
+
+- `pageIndex=1&pageSize=10`: lay 10 item dau.
+- `pageIndex=2&pageSize=10`: bo qua 10 item dau, lay 10 item tiep theo.
+- `pageIndex=3&pageSize=10`: bo qua 20 item dau, lay 10 item tiep theo.
+
 ## Buoc 3 - Trien khai Application
 
 Sau khi co Domain va Contract, tao `DemoCICD.Application`.
 
 Application chua use case cua he thong. No xu ly business flow, goi repository abstraction, map response, validate request thong qua pipeline.
 
-Layer nay reference project `DemoCICD.Domain`, `DemoCICD.Contract`.
+Layer nay reference project `DemoCICD.Domain`, `DemoCICD.Contract`, `DemoCICD.Persistence`
 
 ### NuGet/packages dang dung trong Application
 
@@ -336,6 +467,123 @@ Query.GetProducts
  -> AutoMapper map Product -> ProductResponse
  -> Result<List<ProductResponse>>
 ```
+
+Sau khi bo sung search/sort/paging, `GetProductsQueryHandler` xu ly them:
+
+- Search theo `Name` hoac `Description`.
+- Sort mot cot bang LINQ.
+- Sort nhieu cot bang raw SQL.
+- Paging bang `PagedResult`.
+- Map `PagedResult<Product>` sang `PagedResult<ProductResponse>`.
+
+#### Search
+
+`SearchTerm` dung de loc danh sach product theo tu khoa.
+
+Y nghia:
+
+- Neu `SearchTerm` rong thi lay danh sach product binh thuong.
+- Neu co `SearchTerm` thi loc product co `Name` hoac `Description` chua tu khoa do.
+
+Flow:
+
+```text
+SearchTerm
+ -> FindAll(predicate)
+ -> Name.Contains(...) hoac Description.Contains(...)
+```
+
+#### Sort mot cot
+
+Khi request khong co `SortColumnAndOrder`, handler sort mot cot.
+
+Input vi du:
+
+```text
+sortColumn=name
+sortOrder=ASC
+```
+
+Y nghia:
+
+- `SortColumn` quyet dinh cot can sap xep.
+- `SortOrder` quyet dinh tang dan/giam dan.
+
+Handler dung `GetSortProperty` de map cot sort:
+
+- `name` -> `Product.Name`
+- `price` -> `Product.Price`
+- `description` -> `Product.Description`
+- mac dinh -> `Product.Id`
+
+Sau do dung:
+
+- `OrderBy` neu sort tang dan.
+- `OrderByDescending` neu sort giam dan.
+
+#### Sort nhieu cot
+
+Khi request co `SortColumnAndOrder`, handler xu ly sort nhieu dieu kien.
+
+Input vi du:
+
+```text
+sortColumnAndOrder=name-ASC,price-DESC
+```
+
+Y nghia:
+
+- Sort truoc theo `Name` tang dan.
+- Neu cung `Name`, tiep tuc sort theo `Price` giam dan.
+
+Flow:
+
+```text
+SortColumnAndOrder
+ -> SortOrderExtension parse thanh dictionary
+ -> Handler tao ORDER BY nhieu cot
+ -> Query database
+```
+
+Trong code hien tai, sort nhieu cot dang dung raw SQL vi LINQ dynamic sort nhieu cot phuc tap hon sort mot cot.
+
+Luu y can cai thien ve sau:
+
+- Raw SQL hien co ghep chuoi voi `SearchTerm`, nen can can than SQL Injection.
+- Nen chuyen sang parameterized SQL hoac dynamic LINQ/specification de an toan hon.
+- `TotalCount` khi search nen dem theo query da filter, khong nen luon dem toan bo product.
+
+#### Paging trong handler
+
+Sau khi search va sort, handler moi paging.
+
+Y nghia:
+
+- Search quyet dinh tap du lieu can lay.
+- Sort quyet dinh thu tu du lieu.
+- Paging quyet dinh lay doan nao trong tap du lieu da sort.
+
+Thu tu dung:
+
+```text
+Search -> Sort -> Paging
+```
+
+Neu paging truoc sort hoac search, ket qua co the sai vi moi trang se duoc tinh tren tap du lieu chua loc/chua sap xep.
+
+Voi LINQ, `PagedResult.CreateAsync` se:
+
+- Dem tong so item.
+- Chuan hoa `PageIndex`, `PageSize`.
+- Dung `Skip`/`Take` de lay dung trang.
+
+Voi raw SQL sort nhieu cot, handler tu tao:
+
+```text
+OFFSET ... ROWS FETCH NEXT ... ROWS ONLY
+```
+
+Day la paging cua SQL Server.
 
 ### Behavious/ValidationPipelineBehaviour
 
@@ -789,6 +1037,49 @@ HTTP request
  -> Application handler
  -> tra IActionResult
 ```
+
+#### GetProducts voi search/sort/paging
+
+Action `GetProducts` hien nhan cac query params:
+
+- `searchTerm`: tu khoa tim product.
+- `sortColumn`: cot sort don.
+- `sortOrder`: chieu sort don, vi du `ASC` hoac `DESC`.
+- `sortColumnAndOrder`: sort nhieu cot, vi du `name-ASC,price-DESC`.
+- `pageIndex`: trang can lay.
+- `pageSize`: so item moi trang.
+
+Controller khong tu xu ly search/sort/paging. Controller chi:
+
+- Nhan query string tu HTTP request.
+- Convert `sortOrder` sang `SortOrder`.
+- Convert `sortColumnAndOrder` sang dictionary sort nhieu cot.
+- Tao `Query.GetProducts`.
+- Goi `Sender.Send(...)` de dua request vao Application.
+
+Vi du request:
+
+```text
+GET /api/v1/Products?searchTerm=phone&sortColumn=name&sortOrder=ASC&pageIndex=1&pageSize=10
+```
+
+Y nghia:
+
+- Tim product co tu khoa `phone`.
+- Sort theo `Name` tang dan.
+- Lay trang 1, moi trang 10 item.
+
+Vi du sort nhieu cot:
+
+```text
+GET /api/v1/Products?sortColumnAndOrder=name-ASC,price-DESC&pageIndex=1&pageSize=20
+```
+
+Y nghia:
+
+- Sort theo `Name` tang dan.
+- Neu trung `Name`, sort tiep theo `Price` giam dan.
+- Lay trang 1, moi trang 20 item.
 
 ### API versioning trong Presentation
 

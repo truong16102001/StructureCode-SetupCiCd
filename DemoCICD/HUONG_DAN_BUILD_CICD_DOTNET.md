@@ -593,7 +593,7 @@ Y nghia:
 
 - Chay validation truoc handler.
 - Tu dong tim validator cua request hien tai.
-- Neu input sai thi tra validation error hoac nem validation exception theo implementation.
+- Neu input sai thi tra `ValidationResult` theo Result Pattern.
 - Neu input dung thi moi goi handler.
 
 Dung de lam gi:
@@ -602,40 +602,215 @@ Dung de lam gi:
 Sender.Send(request)
  -> ValidationPipelineBehavior
  -> FluentValidation validator trong Contract
- -> Handler
+ -> Handler neu validation hop le
 ```
 
-### Exceptions/ValidationException
+Voi implementation hien tai, validation fail khong throw exception. Pipeline tao `ValidationResult` va tra nguoc ve controller.
 
-`ValidationException` bieu dien loi validation o application layer.
-
-Y nghia:
-
-- Co type rieng cho loi validation.
-- Middleware co the bat va tra response dung format.
-- Tach loi validation khoi loi system.
-
-Khac gi voi `ValidationPipelineBehavior`:
-
-- `ValidationPipelineBehavior` la nguoi thuc thi validation. No nam tren duong di cua MediatR, chay truoc handler, lay validator ra de kiem tra request.
-- `ValidationException` la ket qua loi duoc bieu dien bang exception khi validation fail. No khong tu chay validation, no chi mang thong tin loi.
-
-Vi du de hieu:
+Vi du `CreateProduct` co `Price < 0`:
 
 ```text
-CreateProduct request di vao
- -> ValidationPipelineBehavior chay CreateProductValidator
- -> Neu Name rong/Gia sai
- -> Tao hoac nem ValidationException
- -> ExceptionHandlingMiddleware bat loi
- -> Tra ve HTTP 400 kem danh sach loi
+POST /api/v1/Products
+ -> ProductsController nhan Command.CreateProductCommand
+ -> Sender.Send(CreateProductCommand)
+ -> MediatR chay qua cac PipelineBehavior
+ -> ValidationPipelineBehavior<CreateProductCommand, Result>
+ -> Lay tat ca IValidator<CreateProductCommand>
+ -> Tim thay CreateProductValidator
+ -> CreateProductValidator check RuleFor(Price).GreaterThan(0)
+ -> Price < 0 nen validation fail
+ -> Tao ValidationResult
+ -> CreateProductCommandHandler khong chay
+ -> TransactionPipelineBehavior khong mo transaction/save data
+ -> Controller thay result.IsFailure
+ -> HandlerFailure(result)
+ -> HTTP 400 Validation Error
 ```
+
+`CreateProductValidator` khong duoc controller hay handler goi truc tiep. No duoc DI dang ky qua `AddValidatorsFromAssembly(...)`, sau do `ValidationPipelineBehavior` tu lay validator dung voi type request hien tai.
 
 Co the hieu ngan gon:
 
 ```text
-ValidationPipelineBehavior = noi kiem tra
-ValidationException = loi duoc nem/tra ra khi kiem tra that bai
+Request hien tai la CreateProductCommand
+ -> Pipeline can IValidator<CreateProductCommand>
+ -> CreateProductValidator match type nay
+ -> Validator duoc chay truoc handler
+```
+
+Format loi validation hien tai den tu `ApiController.HandlerFailure(result)`, khong phai tu `ExceptionHandlingMiddleware`.
+
+### Behavious/TransactionPipelineBehaviour
+
+`TransactionPipelineBehavior<TRequest, TResponse>` la pipeline transaction cho MediatR command.
+
+Y nghia:
+
+- Bao quanh command handler bang transaction.
+- Dam bao tinh toan ven du lieu.
+- Neu handler thanh cong thi save/commit.
+- Neu handler loi thi rollback.
+- Query chi doc du lieu nen bo qua transaction.
+
+Trong project hien tai, pipeline chi xu ly transaction cho request co ten ket thuc bang `Command`.
+
+Y nghia cua rule nay:
+
+- `CreateProductCommand`, `UpdateProductCommand`, `DeleteProductCommand` can transaction.
+- `GetProductsQuery`, `GetProductByIdQuery` khong can transaction.
+
+### SaveChanges khac Commit nhu the nao?
+
+Trong EF Core:
+
+- `SaveChanges`/`SaveChangesAsync`: flush thay doi tu DbContext xuong database.
+- `Commit`: xac nhan transaction thanh cong.
+- `Rollback`: huy tat ca thay doi trong transaction, ke ca thay doi da `SaveChanges` nhung chua `Commit`.
+
+Case tao product trong project dang gia lap:
+
+```text
+BeginTransaction
+ -> Add Product 1
+ -> SaveChanges
+ -> Query lai Product 1 tu DB de lay data/Id vua tao
+ -> Add Product 2 dua tren Product 1
+ -> SaveChanges
+ -> Commit
+```
+
+Ly do can `SaveChanges` giua chung:
+
+- Product 1 phai duoc flush xuong database thi moi query lai bang repository duoc.
+- Tuy da `SaveChanges`, du lieu van nam trong transaction.
+- Neu buoc tao Product 2 loi, transaction rollback thi Product 1 cung bi huy.
+
+Noi ngan gon:
+
+```text
+SaveChanges = day thay doi xuong DB trong transaction
+Commit = chap nhan transaction
+Rollback = huy transaction
+```
+
+### Hai strategy transaction trong project
+
+README dang mo ta 2 huong xu ly transaction.
+
+#### SQL-SERVER-STRATEGY-1
+
+Dung `ApplicationDbContext` truc tiep trong Application.
+
+Uu diem:
+
+- Dung duoc voi EF Core `SqlServerRetryingExecutionStrategy`.
+- Phu hop khi can retry cac loi transient cua SQL Server nhu timeout/mat ket noi tam thoi.
+- Chu dong dung `BeginTransactionAsync`, `SaveChangesAsync`, `CommitAsync`.
+
+Nhuoc diem:
+
+- Pha rule Clean Architecture.
+- `Application` phai reference `Persistence`.
+- Handler/pipeline trong Application biet truc tiep `ApplicationDbContext`.
+
+Day la trade-off:
+
+```text
+Tot cho retry strategy cua EF Core
+nhung khong dep ve Clean Architecture
+```
+
+#### SQL-SERVER-STRATEGY-2
+
+Dung `IUnitOfWork` thay vi dung truc tiep `ApplicationDbContext`.
+
+Uu diem:
+
+- Giu dung Clean Architecture hon.
+- `Application` chi phu thuoc abstraction `IUnitOfWork`.
+- EF Core/DbContext van nam trong `Persistence`.
+
+Nhuoc diem:
+
+- Khong pair truc tiep tot voi EF Core retry execution strategy.
+- Neu can retry theo EF Core, phai thiet ke them abstraction/implementation phu hop o Persistence.
+
+Day la trade-off:
+
+```text
+Dep hon ve Clean Architecture
+nhung yeu hon neu can gan truc tiep voi EF Core retry strategy
+```
+
+Ket luan theo README:
+
+- Strategy 1: uu tien EF Core retry/resiliency, chap nhan pha Clean Architecture.
+- Strategy 2: uu tien Clean Architecture, chap nhan khong dung truc tiep retry execution strategy.
+
+### Behavious/PerformancePipelineBehavior
+
+`PerformancePipelineBehavior` dung de do thoi gian chay cua MediatR request.
+
+Y nghia:
+
+- Bat dau do thoi gian truoc khi goi handler.
+- Ket thuc do thoi gian sau khi handler chay xong.
+- Neu request chay qua 5000ms thi log warning.
+
+Dung de lam gi:
+
+- Phat hien command/query chay cham.
+- Ho tro toi uu performance.
+- De biet request nao can toi uu query/database/logic.
+
+### Behavious/TracingPipelineBehavior
+
+`TracingPipelineBehavior` dung de log thong tin tat ca request di qua MediatR.
+
+Y nghia:
+
+- Log ten request.
+- Log thoi gian xu ly.
+- Log du lieu request.
+
+Dung de lam gi:
+
+- Trace flow xu ly.
+- De debug khi can biet request nao da chay.
+- Ho tro quan sat he thong trong qua trinh development.
+
+Luu y:
+
+- `TracingPipelineBehavior` chi co tac dung khi duoc dang ky vao DI nhu mot `IPipelineBehavior<,>`.
+- Neu chua dang ky trong `AddConfigureMediatR`, class ton tai nhung khong tham gia flow.
+
+### Exceptions/ValidationException
+
+`ValidationException` bieu dien loi validation theo dang exception.
+
+Y nghia:
+
+- Dung khi project chon cach throw exception luc validation fail.
+- Middleware co the bat exception nay va tra response loi.
+- Tach loi validation khoi loi system.
+
+Trong implementation hien tai, `ValidationPipelineBehavior` dang tra `ValidationResult` thay vi throw `ValidationException`.
+
+Vi vay validation fail hien tai di theo flow:
+
+```text
+ValidationPipelineBehavior
+ -> ValidationResult
+ -> Controller HandlerFailure
+ -> HTTP 400
+```
+
+Khong di theo flow:
+
+```text
+throw ValidationException
+ -> ExceptionHandlingMiddleware
+ -> HTTP error response
 ```
 
 ### Mapper/ServiceProfile
@@ -660,7 +835,14 @@ Dang co 2 method:
 
 - Scan Application assembly de dang ky MediatR handlers.
 - Dang ky `ValidationPipelineBehavior`.
+- Dang ky `PerformancePipelineBehavior`.
+- Dang ky `TransactionPipelineBehavior`.
 - Scan Contract assembly de dang ky FluentValidation validators.
+
+Luu y:
+
+- `TracingPipelineBehavior` chi chay neu duoc dang ky them vao danh sach `IPipelineBehavior<,>`.
+- Thu tu dang ky pipeline co anh huong den thu tu request di qua cac behavior.
 
 `AddConfigurationAutoMapper` lam gi:
 
@@ -1178,6 +1360,55 @@ Request vao middleware
  -> middleware catch
  -> log loi
  -> tra JSON error response
+```
+
+Middleware nay chi chay khi duoc dang ky va bat trong `Program.cs`.
+
+Can co:
+
+- Dang ky service `ExceptionHandlingMiddleware`.
+- Goi `app.UseMiddleware<ExceptionHandlingMiddleware>()`.
+
+Khi nao middleware xay ra:
+
+- Controller throw exception.
+- Handler throw exception.
+- Pipeline behavior throw exception.
+- Repository/DbContext throw exception.
+- Bat ky loi nao trong HTTP request pipeline chua bi catch.
+
+Vi du:
+
+- `NotFoundException`
+- `BadRequestException`
+- `FormatException`
+- Loi database.
+- Loi system khong mong muon.
+
+Khi nao middleware khong xay ra:
+
+- Code khong throw exception.
+- Handler/pipeline tra ve `Result.Failure`.
+- Validation fail nhung `ValidationPipelineBehavior` tra `ValidationResult`.
+
+Trong project hien tai, validation fail dang di theo Result Pattern:
+
+```text
+ValidationPipelineBehavior
+ -> ValidationResult
+ -> ProductsController nhan result.IsFailure
+ -> ApiController.HandlerFailure(result)
+ -> HTTP 400 Validation Error
+```
+
+Vi vay neu comment `ExceptionHandlingMiddleware`, response validation van dung format. Format do den tu `HandlerFailure`, khong phai middleware.
+
+Co the hieu ngan gon:
+
+```text
+PipelineBehavior xu ly quanh MediatR request.
+ExceptionHandlingMiddleware bat exception cua toan HTTP request.
+HandlerFailure xu ly Result failure khi khong throw exception.
 ```
 
 ### SwaggerExtensions va ConfigureSwaggerOptions

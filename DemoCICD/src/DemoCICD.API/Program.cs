@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using DemoCICD.API.Middleware;
 using DemoCICD.Application.DependencyInjection.Extensions;
 using DemoCICD.Persistence.DependencyInjection.Extensions;
 using DemoCICD.Persistence.DependencyInjection.Options;
@@ -28,6 +29,8 @@ builder.Services
 
 builder.Services.AddConfigureMediatR();
 
+builder.Services.AddTransient<ExceptionHandlingMiddleware>();
+
 // Configure Options and SQL
 builder.Services.ConfigureSqlServerRetryOptions(builder.Configuration.GetSection(nameof(SqlServerRetryOptions)));
 builder.Services.AddSqlConfiguration();
@@ -38,6 +41,8 @@ builder.Services.AddConfigurationAutoMapper();
 builder.Services.AddControllers().AddApplicationPart(DemoCICD.Presentation.AssemblyReference.Assembly);
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseSwagger();
 app.UseSwaggerUI();

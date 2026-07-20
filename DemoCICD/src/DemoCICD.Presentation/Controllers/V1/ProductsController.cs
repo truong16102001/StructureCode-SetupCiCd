@@ -23,7 +23,7 @@ public class ProductsController : ApiController
     public async Task<IActionResult> GetProducts(string? searchTerm = null, 
         string? sortColumn = null, string? sortOrder = null, string? sortColumnAndOrder = null, int pageIndex = 1, int pageSize = 10)
     {
-        var result = await Sender.Send(new Query.GetProducts(searchTerm, sortColumn,
+        var result = await Sender.Send(new Query.GetProductsQuery(searchTerm, sortColumn,
             SortOrderExtension.ConvertStringToSortOrder(sortOrder),
             SortOrderExtension.ConvertStringToMultipleSortOrder(sortColumnAndOrder),
             pageIndex,
@@ -36,7 +36,20 @@ public class ProductsController : ApiController
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductById(Guid productId)
     {
-        var result = await Sender.Send(new Query.GetProductById(productId));
+        var result = await Sender.Send(new Query.GetProductByIdQuery(productId));
+        return Ok(result);
+    }
+
+    [HttpPost(Name = "CreateProducts")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Products([FromBody] Command.CreateProductCommand CreateProduct)
+    {
+        var result = await Sender.Send(CreateProduct);
+
+        if (result.IsFailure)
+            return HandlerFailure(result);
+
         return Ok(result);
     }
 }

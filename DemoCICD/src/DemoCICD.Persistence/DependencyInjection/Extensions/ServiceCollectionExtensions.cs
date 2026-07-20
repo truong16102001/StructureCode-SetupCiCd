@@ -37,8 +37,21 @@ public static class ServiceCollectionExtensions
                                     errorNumbersToAdd: options.CurrentValue.ErrorNumbersToAdd))
                             .MigrationsAssembly(typeof(ApplicationDbContext).Assembly.GetName().Name));
 
-            #endregion ============== SQL-SERVER-STRATEGY-1 ==============
+            #endregion ===============================================
 
+            #region ============== SQL-SERVER-STRATEGY-2 ==============
+
+            //builder
+            //.EnableDetailedErrors(true)
+            //.EnableSensitiveDataLogging(true)
+            //.UseLazyLoadingProxies(true) // => If UseLazyLoadingProxies, all of the navigation fields should be VIRTUAL
+            //.UseSqlServer(
+            //    connectionString: configuration.GetConnectionString("ConnectionStrings"),
+            //        sqlServerOptionsAction: optionsBuilder
+            //            => optionsBuilder
+            //            .MigrationsAssembly(typeof(ApplicationDbContext).Assembly.GetName().Name));
+
+            #endregion =================================================
 
         });
 

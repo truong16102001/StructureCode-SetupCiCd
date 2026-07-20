@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using DemoCICD.Persistence;
 
 namespace DemoCICD.Application.Usercases.V1.Queries.Product;
-public sealed class GetProductsQueryHandler : IQueryHandler<Query.GetProducts, PagedResult<Response.ProductResponse>>
+public sealed class GetProductsQueryHandler : IQueryHandler<Query.GetProductsQuery, PagedResult<Response.ProductResponse>>
 {
     private readonly IRepositoryBase<DemoCICD.Domain.Entities.Product, Guid> _productRepository;
 
@@ -26,7 +26,7 @@ public sealed class GetProductsQueryHandler : IQueryHandler<Query.GetProducts, P
         _context = context;
     }
 
-    public async Task<Result<PagedResult<Response.ProductResponse>>> Handle(Query.GetProducts request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResult<Response.ProductResponse>>> Handle(Query.GetProductsQuery request, CancellationToken cancellationToken)
     {
         if (request.SortColumnAndOrder.Any()) // =>>  Raw Query when order by multi column
         {
@@ -87,7 +87,7 @@ public sealed class GetProductsQueryHandler : IQueryHandler<Query.GetProducts, P
         }
     }
 
-    private static Expression<Func<Domain.Entities.Product, object>> GetSortProperty(Query.GetProducts request)
+    private static Expression<Func<Domain.Entities.Product, object>> GetSortProperty(Query.GetProductsQuery request)
          => request.SortColumn?.ToLower() switch
          {
              "name" => product => product.Name,

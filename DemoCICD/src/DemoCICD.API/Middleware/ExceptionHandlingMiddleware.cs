@@ -3,14 +3,12 @@ using DemoCICD.Domain.Exceptions;
 
 namespace DemoCICD.API.Middleware;
 
-public class ExceptionHandlingMiddleware : IMiddleware
+internal sealed class ExceptionHandlingMiddleware : IMiddleware
 {
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
     public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger)
-    {
-        _logger = logger;
-    }
+        => _logger = logger;
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -45,9 +43,8 @@ public class ExceptionHandlingMiddleware : IMiddleware
         await httpContext.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 
-    private static int GetStatusCode(Exception exception)
-    {
-        return exception switch
+    private static int GetStatusCode(Exception exception) =>
+        exception switch
         {
             BadRequestException => StatusCodes.Status400BadRequest,
             NotFoundException => StatusCodes.Status404NotFound,
@@ -56,16 +53,13 @@ public class ExceptionHandlingMiddleware : IMiddleware
             FormatException => StatusCodes.Status422UnprocessableEntity,
             _ => StatusCodes.Status500InternalServerError
         };
-    }
 
-    private static string GetTitle(Exception exception)
-    {
-        return exception switch
+    private static string GetTitle(Exception exception) =>
+        exception switch
         {
             DomainException applicationException => applicationException.Title,
             _ => "Server Error"
         };
-    }
 
     private static IReadOnlyCollection<Application.Exceptions.ValidationError> GetErrors(Exception exception)
     {
@@ -76,6 +70,6 @@ public class ExceptionHandlingMiddleware : IMiddleware
             errors = validationException.Errors;
         }
 
-        return errors!;
+        return errors;
     }
 }

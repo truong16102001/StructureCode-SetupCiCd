@@ -3,12 +3,10 @@ using DemoCICD.Contract.Abstractions.Services.Product;
 using DemoCICD.Contract.Asbtractions.Message;
 using DemoCICD.Contract.Shared;
 using DemoCICD.Domain.Abstractions.Repositories;
-using DemoCICD.Domain.Entities;
 using DemoCICD.Domain.Exceptions;
-using static DemoCICD.Domain.Exceptions.ProductException;
 
 namespace DemoCICD.Application.Usercases.V1.Queries.Product;
-public sealed class GetProductByIdQueryHandler : IQueryHandler<Query.GetProductById, Response.ProductResponse>
+public sealed class GetProductByIdQueryHandler : IQueryHandler<Query.GetProductByIdQuery, Response.ProductResponse>
 {
     private readonly IRepositoryBase<DemoCICD.Domain.Entities.Product, Guid> _productRepository;
 
@@ -20,7 +18,7 @@ public sealed class GetProductByIdQueryHandler : IQueryHandler<Query.GetProductB
         _productRepository = productRepository;
     }
 
-    public async Task<Result<Response.ProductResponse>> Handle(Query.GetProductById request, CancellationToken cancellationToken)
+    public async Task<Result<Response.ProductResponse>> Handle(Query.GetProductByIdQuery request, CancellationToken cancellationToken)
     {
         var product = await _productRepository.FindByIdAsync(request.Id)
            ?? throw new ProductException.ProductNotFoundException(request.Id);

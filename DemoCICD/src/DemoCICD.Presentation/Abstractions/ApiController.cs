@@ -26,7 +26,7 @@ public abstract class ApiController : ControllerBase
             _ =>
                 BadRequest(
                     CreateProblemDetails(
-                        "Bab Request", StatusCodes.Status400BadRequest,
+                        "Badd Request", StatusCodes.Status400BadRequest,
                         result.Error))
         };
 

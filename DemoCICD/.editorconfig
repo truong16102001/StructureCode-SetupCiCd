@@ -15,6 +15,7 @@ end_of_line = crlf
 insert_final_newline = true
 
 #### .NET Coding Conventions ####
+#### .NET Coding Conventions ####
 
 # Organize usings
 dotnet_separate_import_directive_groups = false
@@ -79,6 +80,8 @@ dotnet_diagnostic.IDE0058.severity = none
 
 # IDE0053: Use expression body for lambda expression
 dotnet_diagnostic.IDE0053.severity = none
+csharp_using_directive_placement = outside_namespace:error
+csharp_prefer_simple_using_statement = true:suggestion
 
 [*.{cs,vb}]
 dotnet_style_prefer_simplified_boolean_expressions = true:suggestion

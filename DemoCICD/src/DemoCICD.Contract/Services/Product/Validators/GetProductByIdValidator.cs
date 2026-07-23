@@ -1,6 +1,7 @@
-﻿using FluentValidation;
+﻿using DemoCICD.Contract.Services.Product;
+using FluentValidation;
 
-namespace DemoCICD.Contract.Abstractions.Services.Product.Validators;
+namespace DemoCICD.Contract.Services.Product.Validators;
 public class GetProductByIdValidator : AbstractValidator<Query.GetProductByIdQuery>
 {
     public GetProductByIdValidator()

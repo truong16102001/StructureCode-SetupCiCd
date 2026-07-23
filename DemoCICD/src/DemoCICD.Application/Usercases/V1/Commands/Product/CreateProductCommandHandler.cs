@@ -1,9 +1,10 @@
-﻿using DemoCICD.Contract.Abstractions.Services.Product;
-using DemoCICD.Contract.Asbtractions.Message;
+﻿using DemoCICD.Contract.Asbtractions.Message;
+using DemoCICD.Contract.Services.Product;
 using DemoCICD.Contract.Shared;
 using DemoCICD.Domain.Abstractions;
 using DemoCICD.Domain.Abstractions.Repositories;
 using DemoCICD.Persistence;
+using MediatR;
 
 namespace DemoCICD.Application.Usercases.V1.Commands.Product;
 public sealed class CreateProductCommandHandler : ICommandHandler<Command.CreateProductCommand>
@@ -14,13 +15,16 @@ public sealed class CreateProductCommandHandler : ICommandHandler<Command.Create
 
     private readonly ApplicationDbContext _context; // SQL-SERVER-STRATEGY-1
 
+    private readonly IPublisher _publisher;
+
     public CreateProductCommandHandler(IRepositoryBase<Domain.Entities.Product, Guid> productRepository, 
-        ApplicationDbContext applicationDb, IUnitOfWork unitOfWork)
+        ApplicationDbContext applicationDb, IUnitOfWork unitOfWork, IPublisher publisher)
 
     {
         _productRepository = productRepository;
         _unitOfWork = unitOfWork;
         _context = applicationDb;
+        _publisher = publisher;
     }
 
     public async Task<Result> Handle(Command.CreateProductCommand request, CancellationToken cancellationToken)
@@ -41,6 +45,11 @@ public sealed class CreateProductCommandHandler : ICommandHandler<Command.Create
             productCreated.Id.ToString());
 
         _productRepository.Add(productSecond);
+
+        await _context.SaveChangesAsync();
+
+        // Send email
+        await _publisher.Publish(new DomainEvent.ProductCreated(productSecond.Id), cancellationToken);
 
         return Result.Success();
     }

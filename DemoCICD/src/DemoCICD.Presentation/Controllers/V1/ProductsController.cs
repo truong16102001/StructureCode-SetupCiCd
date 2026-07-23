@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning;
-using DemoCICD.Contract.Abstractions.Services.Product;
 using DemoCICD.Contract.Enumerations;
 using DemoCICD.Contract.Extensions;
+using DemoCICD.Contract.Services.Product;
 using DemoCICD.Contract.Shared;
 using DemoCICD.Presentation.Abstractions;
 using MediatR;

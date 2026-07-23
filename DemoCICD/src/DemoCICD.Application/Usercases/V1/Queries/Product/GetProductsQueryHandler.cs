@@ -1,6 +1,5 @@
 ﻿using System.Linq.Expressions;
 using AutoMapper;
-using DemoCICD.Contract.Abstractions.Services.Product;
 using DemoCICD.Contract.Abstractions.Shared;
 using DemoCICD.Contract.Asbtractions.Message;
 using DemoCICD.Contract.Enumerations;
@@ -8,6 +7,7 @@ using DemoCICD.Contract.Shared;
 using DemoCICD.Domain.Abstractions.Repositories;
 using Microsoft.EntityFrameworkCore;
 using DemoCICD.Persistence;
+using DemoCICD.Contract.Services.Product;
 
 namespace DemoCICD.Application.Usercases.V1.Queries.Product;
 public sealed class GetProductsQueryHandler : IQueryHandler<Query.GetProductsQuery, PagedResult<Response.ProductResponse>>

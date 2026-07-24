@@ -1486,6 +1486,25 @@ Y nghia:
 - Persistence chiu trach nhiem database.
 - API chi cau hinh va host app.
 
+## Phu luc ly thuyet nen doc rieng
+
+Tai lieu nay tap trung vao source va cac project. Phan ly thuyet nen tang ve kien truc, CQRS, MediatR, DomainEvent, Outbox, EF write/Dapper read, DDD va Data Driven duoc tach rieng tai:
+
+```text
+LY_THUYET_KIEN_TRUC_CQRS_DDD.md
+```
+
+Tom tat cac y can nam:
+
+- `ISender.Send`: gui command/query den handler chinh va co ket qua tra ve.
+- `IPublisher.Publish`: publish domain event/notification den nhieu handler phu.
+- `PipelineBehavior`: chi boc quanh MediatR handler, khong boc toan bo HTTP request.
+- `ExceptionHandlingMiddleware`: boc toan bo HTTP request va bat cac exception bi throw.
+- `DomainEvent` hien tai chay in-memory bang MediatR, chua phai RabbitMQ/Kafka.
+- Neu muon product commit thanh cong nhung email/SMS loi khong lam rollback request, nen dung Outbox/background worker/message bus.
+- CQRS co the dung EF Core cho write side va Dapper cho read side.
+- DDD tap trung vao nghiep vu va entity co hanh vi; Data Driven thien ve table/data va entity de thanh object chua data.
+
 ## Test project
 
 `DemoCICD.Infrastructure.Tests` dung de chua:

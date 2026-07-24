@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
 using DemoCICD.Contract.Asbtractions.Message;
-using DemoCICD.Contract.Services.V1.Product;
+using DemoCICD.Contract.Services.V2.Product;
 using DemoCICD.Contract.Shared;
 using DemoCICD.Domain.Abstractions.Repositories;
 using DemoCICD.Domain.Exceptions;
 
-namespace DemoCICD.Application.Usercases.V1.Queries.Product;
+namespace DemoCICD.Application.Usercases.V2.Queries.Product;
 public sealed class GetProductByIdQueryHandler : IQueryHandler<Query.GetProductByIdQuery, Response.ProductResponse>
 {
     private readonly IRepositoryBase<DemoCICD.Domain.Entities.Product, Guid> _productRepository;

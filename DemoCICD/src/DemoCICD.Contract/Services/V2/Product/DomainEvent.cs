@@ -1,6 +1,6 @@
 ﻿using DemoCICD.Contract.Abstractions.Message;
 
-namespace DemoCICD.Contract.Services.Product;
+namespace DemoCICD.Contract.Services.V2.Product;
 public static class DomainEvent
 {
     public record ProductCreated(Guid Id) : IDomainEvent;

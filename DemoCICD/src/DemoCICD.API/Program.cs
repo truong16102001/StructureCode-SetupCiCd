@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using DemoCICD.API.DependencyInjection.Extensions;
 using DemoCICD.API.Middleware;
 using DemoCICD.Application.DependencyInjection.Extensions;
 using DemoCICD.Persistence.DependencyInjection.Extensions;
@@ -17,7 +18,7 @@ builder.Logging
 
 builder.Host.UseSerilog();
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwagger();
 
 builder.Services
     .AddApiVersioning(options => options.ReportApiVersions = true)
@@ -44,8 +45,7 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+app.ConfigureSwagger();
 
 app.UseHttpsRedirection();
 

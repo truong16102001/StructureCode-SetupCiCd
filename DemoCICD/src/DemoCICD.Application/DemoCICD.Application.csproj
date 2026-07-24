@@ -16,7 +16,8 @@
     <Folder Include="DependencyInjection\Options\" />
     <Folder Include="Usercases\V1\Commands\Order\" />
     <Folder Include="Usercases\V1\Queries\Order\" />
-    <Folder Include="Usercases\V2\" />
+    <Folder Include="Usercases\V2\Commands\Order\" />
+    <Folder Include="Usercases\V2\Queries\Order\" />
   </ItemGroup>
 
   <ItemGroup>

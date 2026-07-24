@@ -1,12 +1,12 @@
 ﻿using DemoCICD.Contract.Asbtractions.Message;
-using DemoCICD.Contract.Services.V1.Product;
+using DemoCICD.Contract.Services.V2.Product;
 using DemoCICD.Contract.Shared;
 using DemoCICD.Domain.Abstractions;
 using DemoCICD.Domain.Abstractions.Repositories;
 using DemoCICD.Persistence;
 using MediatR;
 
-namespace DemoCICD.Application.Usercases.V1.Commands.Product;
+namespace DemoCICD.Application.Usercases.V2.Commands.Product;
 public sealed class CreateProductCommandHandler : ICommandHandler<Command.CreateProductCommand>
 {
     private readonly IRepositoryBase<Domain.Entities.Product, Guid> _productRepository;
@@ -40,7 +40,7 @@ public sealed class CreateProductCommandHandler : ICommandHandler<Command.Create
         var productCreated = await _productRepository.FindByIdAsync(product.Id);
 
         var productSecond = Domain.Entities.Product.Create(Guid.NewGuid(),
-            productCreated.Name + " Second",
+            productCreated.Name + " SecondV2",
             productCreated.Price,
             productCreated.Id.ToString());
 

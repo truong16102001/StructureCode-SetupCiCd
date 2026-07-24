@@ -9,7 +9,7 @@ public class Product : DomainEntity<Guid>
 
     public string Description { get; set; }
 
-    public static Product CreateProduct(Guid id, string name, decimal price, string description)
+    public static Product Create(Guid id, string name, decimal price, string description)
     {
         return new Product(id, name, price, description);
     }

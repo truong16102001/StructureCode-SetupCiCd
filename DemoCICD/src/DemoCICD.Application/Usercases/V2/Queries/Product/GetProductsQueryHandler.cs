@@ -7,9 +7,9 @@ using DemoCICD.Contract.Shared;
 using DemoCICD.Domain.Abstractions.Repositories;
 using Microsoft.EntityFrameworkCore;
 using DemoCICD.Persistence;
-using DemoCICD.Contract.Services.V1.Product;
+using DemoCICD.Contract.Services.V2.Product;
 
-namespace DemoCICD.Application.Usercases.V1.Queries.Product;
+namespace DemoCICD.Application.Usercases.V2.Queries.Product;
 public sealed class GetProductsQueryHandler : IQueryHandler<Query.GetProductsQuery, PagedResult<Response.ProductResponse>>
 {
     private readonly IRepositoryBase<DemoCICD.Domain.Entities.Product, Guid> _productRepository;

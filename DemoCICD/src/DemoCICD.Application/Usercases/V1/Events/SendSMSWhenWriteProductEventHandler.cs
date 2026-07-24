@@ -2,25 +2,25 @@
 using DemoCICD.Contract.Services.V1.Product;
 
 namespace DemoCICD.Application.Usercases.V1.Events;
-public class SendEmailWhenWriteProductEventHandler : IDomainEventHandler<DomainEvent.ProductCreated>, IDomainEventHandler<DomainEvent.ProductDeleted>, IDomainEventHandler<DomainEvent.ProductUpdated>
+public class SendSMSWhenWriteProductEventHandler : IDomainEventHandler<DomainEvent.ProductCreated>, IDomainEventHandler<DomainEvent.ProductDeleted>, IDomainEventHandler<DomainEvent.ProductUpdated>
 {
     public async Task Handle(DomainEvent.ProductCreated notification, CancellationToken cancellationToken)
     {
-        await SendEmail();
+        await SendSMS();
     }
 
     public async Task Handle(DomainEvent.ProductDeleted notification, CancellationToken cancellationToken)
     {
-        await SendEmail();
+        await SendSMS();
     }
 
     public async Task Handle(DomainEvent.ProductUpdated notification, CancellationToken cancellationToken)
     {
-        await SendEmail();
+        await SendSMS();
     }
 
-    private async Task SendEmail()
+    private async Task SendSMS()
     {
-        await Task.Delay(5000);
+        await Task.Delay(10000);
     }
 }

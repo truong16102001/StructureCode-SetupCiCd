@@ -1643,11 +1643,14 @@ Y nghia:
     - Flow:
         + ASPNETCORE_ENVIRONMENT=Staging
                     │
+                    │
                     ▼
         + ASP.NET Core
                     │
+                    │
                     ▼
         + Environment = Staging
+                    │
                     │
                     ▼
         + Load appsettings.json + Load appsettings.Staging.json (nếu có)
@@ -1682,8 +1685,10 @@ Y nghia:
         - * App Pool có identity riêng và identity đó cần quyền đọc file application:
             + App Pool Identity
                     │
+                    │
                     ▼
             + C:\WWW\DemoCICD\BE\STAG
+                    │
                     │
                     ▼
             + web.config / DLL / config...
@@ -1737,16 +1742,26 @@ Y nghia:
     - Các bước như Hosting Bundle, hosts, IIS Site, Binding và App Pool không cần tạo lại.
     - Flow release thông thường:
         + Code mới
-            ↓
+                │
+                │
+                ▼
         + dotnet publish -c Release
-            ↓
+                │
+                │
+                ▼
         + Publish Artifact
-            ↓
+                │
+                │
+                ▼
         + Copy/replace
         + C:\WWW\DemoCICD\BE\STAG
-            ↓
+                │
+                │
+                ▼
         + Recycle App Pool
-            ↓
+                │
+                │
+                ▼
         + Test http://democicd.stag.com/swagger
     
     - * Đây cũng chính là phần sau này Jenkins có thể tự động hóa:

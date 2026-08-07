@@ -1635,11 +1635,11 @@ Y nghia:
 4. Xác định Environment
     - ASP.NET Core có các environment thường dùng: Development/Staging/Production
     - Nếu muốn STAG chạy đúng dưới Staging, có thể cấu hình runtime environment, ví dụ trong web.config:
-        <environmentVariables>
-            <environmentVariable
-                name="ASPNETCORE_ENVIRONMENT"
-                value="Staging" />
-        </environmentVariables>
+        <aspNetCore processPath="dotnet" arguments=".   \DemoCICD.API.dll" stdoutLogEnabled="false" stdoutLogFile=".\logs\stdout" hostingModel="inprocess">
+            <environmentVariables>
+                <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Staging" />
+                </environmentVariables>
+		</aspNetCore>
     - Flow:
         + ASPNETCORE_ENVIRONMENT=Staging
                     │
@@ -1709,13 +1709,13 @@ Y nghia:
         + Sites → DemoCICD-BE-STAG → Restart
         + (Không cần chạy iisreset trong mỗi lần deploy. iisreset sẽ ảnh hưởng toàn bộ website đang chạy trên IIS.)
 
-7. Truy cap: http://democicd.dev.com/swagger
+7. Truy cap: http://democicd.stag.com/swagger
     - Neu chi truy cap bang localhost hoac IP thi khong can sua file hosts.
         + Vi du:
             + http://localhost
             + http://127.0.0.1
-    - Neu dung domain tu dat nhu http://democicd.dev.com, may tinh can biet domain do tro ve dau. Voi local dev, them vao file hosts:
-        + 127.0.0.1    democicd.dev.com
+    - Neu dung domain tu dat nhu http://democicd.stag.com, may tinh can biet domain do tro ve dau. Voi local stag, them vao file hosts:
+        + 127.0.0.1    democicd.stag.com
 
     - Lưu ý: Nhiều project chỉ bật Swagger trong môi trường Development, cần kiểm tra Program.cs. Với môi trường STAG, có thể cấu hình:
         + if (app.Environment.IsDevelopment() 

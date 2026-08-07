@@ -1621,12 +1621,12 @@ Y nghia:
     - Sau khi cài Hosting Bundle, run: iisreset tren cmd
 
 2. Publish project API.
-    Sau khi public, Kiểm tra thư mục publish phải có ít nhất:
-        web.config
-        DemoCICD.API.dll
-        DemoCICD.API.deps.json
-        DemoCICD.API.runtimeconfig.json
-        appsettings.json
+    - Sau khi public, Kiểm tra thư mục publish phải có ít nhất:
+        + web.config
+        + DemoCICD.API.dll
+        + DemoCICD.API.deps.json
+        + DemoCICD.API.runtimeconfig.json
+        + appsettings.json
 
 3. Copy artifact sang thu muc deploy
     - Tạo thư mục C:\WWW\DemoCICD\BE\STAG — nơi đặt application đang deploy
@@ -1641,15 +1641,17 @@ Y nghia:
                 value="Staging" />
         </environmentVariables>
     - Flow:
-        ASPNETCORE_ENVIRONMENT=Staging
-                    ↓
-        ASP.NET Core
-                    ↓
-        Environment = Staging
-                    ↓
-        Load appsettings.json
-                    +
-        Load appsettings.Staging.json (nếu có)
+        + ASPNETCORE_ENVIRONMENT=Staging
+                    │
+                    ▼
+        + ASP.NET Core
+                    │
+                    ▼
+        + Environment = Staging
+                    │
+                    ▼
+        + Load appsettings.json + Load appsettings.Staging.json (nếu có)
+        
     - Nếu không có appsettings.Staging.json:
         appsettings.json          → vẫn load
         appsettings.Staging.json  → không có → bỏ qua
@@ -1658,58 +1660,60 @@ Y nghia:
 
 5. Cấu hình domain --> giúp Windows biết domain trỏ về IP nào
     - Mở file hosts trên C:\Windows\System32\drivers\etc --> Thêm: 127.0.0.1 democicd.stag.com
-        --> Điều này có nghĩa: democicd.stag.com → chính máy IIS hiện tại
+        + --> Điều này có nghĩa: democicd.stag.com → chính máy IIS hiện tại
     - Run cmd: ipconfig /flushdns
     - Run cmd: ping democicd.stag.com (Nó phải trả về 127.0.0.1)
     - Lưu ý: nếu truy cập từ máy khác, bạn phải sửa file hosts trên máy truy cập, đồng thời trỏ domain đến IP server
-        VD: 192.168.1.20 democicd.stag.com
+        + VD: 192.168.1.20 democicd.stag.com
 
 # Cấu hình IIS
 6. Tạo Application Pool
-    6.1. Tạo App Pool riêng --> môi trường/process chạy application
-        VD: Name:                  DemoCICD-BE-STAG
-            .NET CLR version:      No Managed Code
-            Managed pipeline mode: Integrated
-            Start application pool immediately: Checked
+    - 6.1. Tạo App Pool riêng --> môi trường/process chạy application
+        + VD: Name:                  DemoCICD-BE-STAG
+        +    .NET CLR version:      No Managed Code
+        +    Managed pipeline mode: Integrated
+        +    Start application pool immediately: Checked
 
-    6.2. Cấp quyền thư mục cho App Pool
+    - 6.2. Cấp quyền thư mục cho App Pool
         - Right click vào C:\WWW\DemoCICD\BE\STAG --> Properties → Security → Edit → Add
         - Tại đây nhập IIS AppPool\DemoCICD-BE-STAG --> Click Check Names 
         - Sau đó cấp quyền: Read & execute, List folder contents, Read (Không cấp Full Control)
-        * Application không chạy bằng account Windows mà bạn đang login. 
-        * App Pool có identity riêng và identity đó cần quyền đọc file application:
-            App Pool Identity
-                    ↓
-            C:\WWW\DemoCICD\BE\STAG
-                    ↓
-            web.config / DLL / config...
-        (Nếu thư mục đã kế thừa permission phù hợp từ C:\WWW thì có thể không cần cấp lại.)
+        - * Application không chạy bằng account Windows mà bạn đang login. 
+        - * App Pool có identity riêng và identity đó cần quyền đọc file application:
+            + App Pool Identity
+                    │
+                    ▼
+            + C:\WWW\DemoCICD\BE\STAG
+                    │
+                    ▼
+            + web.config / DLL / config...
+        - (Nếu thư mục đã kế thừa permission phù hợp từ C:\WWW thì có thể không cần cấp lại.)
     
-    6.3. Tạo website --> đại diện cho một website/application trên IIS
-        Site name:         DemoCICD-BE-STAG
-        Application pool:  DemoCICD-BE-STAG
-        Physical path:     C:\WWW\DemoCICD\BE\STAG
-        Binding:
-            Type:              http
-            IP address:        All Unassigned
-            Port:              80
-            Host name:         democicd.stag.com
+    - 6.3. Tạo website --> đại diện cho một website/application trên IIS
+        + Site name:         DemoCICD-BE-STAG
+        + Application pool:  DemoCICD-BE-STAG
+        + Physical path:     C:\WWW\DemoCICD\BE\STAG
+        + Binding:
+            + Type:              http
+            + IP address:        All Unassigned
+            + Port:              80
+            + Host name:         democicd.stag.com
 
-    6.4. Restart ứng dụng
-        Application Pools → DemoCICD-BE-STAG → Recycle
-        Sites → DemoCICD-BE-STAG → Restart
-        (Không cần chạy iisreset trong mỗi lần deploy. iisreset sẽ ảnh hưởng toàn bộ website đang chạy trên IIS.)
+    - 6.4. Restart ứng dụng
+        + Application Pools → DemoCICD-BE-STAG → Recycle
+        + Sites → DemoCICD-BE-STAG → Restart
+        + (Không cần chạy iisreset trong mỗi lần deploy. iisreset sẽ ảnh hưởng toàn bộ website đang chạy trên IIS.)
 
 7. Truy cap: http://democicd.dev.com/swagger
     - Neu chi truy cap bang localhost hoac IP thi khong can sua file hosts.
-        Vi du:
-            http://localhost
-            http://127.0.0.1
+        + Vi du:
+            + http://localhost
+            + http://127.0.0.1
     - Neu dung domain tu dat nhu http://democicd.dev.com, may tinh can biet domain do tro ve dau. Voi local dev, them vao file hosts:
-        127.0.0.1    democicd.dev.com
+        + 127.0.0.1    democicd.dev.com
 
     - Lưu ý: Nhiều project chỉ bật Swagger trong môi trường Development, cần kiểm tra Program.cs. Với môi trường STAG, có thể cấu hình:
-        if (app.Environment.IsDevelopment() 
+        + if (app.Environment.IsDevelopment() 
         || app.Environment.IsStaging())
         {
             app.UseSwagger();
@@ -1717,38 +1721,33 @@ Y nghia:
         }
 
 8. Khi gặp HTTP 500. Hãy check:
+    - Server đã cài đúng Hosting Bundle chưa?
+    - Physical Path có trỏ đúng publish folder không?
+    - Publish folder có web.config không?
+    - App Pool có No Managed Code không?
+    - App Pool có quyền đọc folder không?
+    - Application có lỗi startup/config/database không?
 
-    Server đã cài đúng Hosting Bundle chưa?
-    Physical Path có trỏ đúng publish folder không?
-    Publish folder có web.config không?
-    App Pool có No Managed Code không?
-    App Pool có quyền đọc folder không?
-    Application có lỗi startup/config/database không?
-
-    Nếu IIS chỉ trả 500 chung chung, có thể tạm bật trong web.config:
-        stdoutLogEnabled="true"
-        stdoutLogFile=".\logs\stdout"
-    để xem startup error. Sau khi xử lý xong nên tắt lại.
+    - Nếu IIS chỉ trả 500 chung chung, có thể tạm bật trong web.config:
+        + stdoutLogEnabled="true"
+        + stdoutLogFile=".\logs\stdout"
+    - để xem startup error. Sau khi xử lý xong nên tắt lại.
 
 9.  Những lần deploy tiếp theo
     - Các bước như Hosting Bundle, hosts, IIS Site, Binding và App Pool không cần tạo lại.
     - Flow release thông thường:
-        Code mới
+        + Code mới
             ↓
-        dotnet publish -c Release
+        + dotnet publish -c Release
             ↓
-        Publish Artifact
+        + Publish Artifact
             ↓
-        Copy/replace
-        C:\WWW\DemoCICD\BE\STAG
+        + Copy/replace
+        + C:\WWW\DemoCICD\BE\STAG
             ↓
-        Recycle App Pool
+        + Recycle App Pool
             ↓
-        Test http://democicd.stag.com/swagger
+        + Test http://democicd.stag.com/swagger
     
-    * Đây cũng chính là phần sau này Jenkins có thể tự động hóa:
-        Build
-        → Publish
-        → Deploy
-        → Restart/Recycle
-        → Verify
+    - * Đây cũng chính là phần sau này Jenkins có thể tự động hóa:
+        Build → Publish → Deploy → Restart/Recycle → Verify

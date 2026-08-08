@@ -93,7 +93,6 @@ Thumbs.db
 # =========================
 # Secrets / Env
 # =========================
-appsettings.Development.json
 appsettings.Local.json
 .env
 .env.*

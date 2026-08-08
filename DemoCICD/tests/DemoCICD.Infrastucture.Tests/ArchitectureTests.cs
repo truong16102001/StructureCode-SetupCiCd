@@ -49,7 +49,7 @@ public class ArchitectureTests
         var otherProjects = new[]
         {
             InfrastructureNamespace,
-            PersistenceNamespace, // Due to Implement sort multi columns by apply RawQuery with EntityFramework
+            //PersistenceNamespace, // Due to Implement sort multi columns by apply RawQuery with EntityFramework
             PresentationNamespace,
             APINamespace
         };

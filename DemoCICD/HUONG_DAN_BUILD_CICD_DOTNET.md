@@ -1604,7 +1604,7 @@ Y nghia:
                         │
                         ├─ Load appsettings.json
                         │
-                        └─ Load appsettings.Staging.json nếu có
+                        └─ Load appsettings.Staging.json nếu có (Chú ý config connection strings = tài khoản sa)
         │
         │  6. Start / Recycle
         ▼

@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace DemoCICD.Persistence.Migrations
-{
+namespace DemoCICD.Persistence.Migrations;
+
     /// <inheritdoc />
     public partial class AddProductTable : Migration
     {
@@ -32,5 +32,4 @@ namespace DemoCICD.Persistence.Migrations
             migrationBuilder.DropTable(
                 name: "Product");
         }
-    }
 }

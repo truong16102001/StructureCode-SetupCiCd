@@ -1,19 +1,19 @@
 ﻿namespace DemoCICD.Contract.Shared;
 public class Error : IEquatable<Error>
 {
-    public static readonly Error None = new(string.Empty, string.Empty);
+    public static readonly Error None = new (string.Empty, string.Empty);
 
-    public static readonly Error Nullable = new("Error.Nullable", "The specified result value is null");
-
-    public string Code { get; }
-
-    public string Message { get; }
+    public static readonly Error Nullable = new ("Error.Nullable", "The specified result value is null");
 
     public Error(string code, string message)
     {
         Code = code;
         Message = message;
     }
+
+    public string Code { get; }
+
+    public string Message { get; }
 
     public static implicit operator string(Error error) => error.Code;
 
@@ -46,7 +46,7 @@ public class Error : IEquatable<Error>
 
     public override bool Equals(object? obj)
     {
-      return obj is Error error && Equals(error);
+        return obj is Error error && Equals(error);
     }
 
     public override int GetHashCode()

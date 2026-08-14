@@ -45,7 +45,10 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-app.ConfigureSwagger();
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+{
+    app.ConfigureSwagger();
+}
 
 app.UseHttpsRedirection();
 

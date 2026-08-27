@@ -22,7 +22,7 @@ public class ProductsController : ApiController
     [ProducesResponseType(typeof(Result<IEnumerable<Response.ProductResponse>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProducts(string? searchTerm = null,
-        string? sortColumn = null, string? sortOrder = null, string? sortColumnAndOrder = null, int pageIndex = 1, int pageSize = 5)
+        string? sortColumn = null, string? sortOrder = null, string? sortColumnAndOrder = null, int pageIndex = 1, int pageSize = 15)
     {
         var result = await Sender.Send(new Query.GetProductsQuery(searchTerm, sortColumn,
             SortOrderExtension.ConvertStringToSortOrder(sortOrder),

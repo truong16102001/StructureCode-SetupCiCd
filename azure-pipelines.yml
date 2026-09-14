@@ -1,0 +1,77 @@
+trigger:
+  branches:
+    include:
+      - staging
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
+  solution: 'DemoCICD/DemoCICD.sln'
+  apiProject: 'DemoCICD/src/DemoCICD.API/DemoCICD.API.csproj'
+
+  publishDirectory: '$(Build.ArtifactStagingDirectory)/publish'
+  packagePath: '$(Build.ArtifactStagingDirectory)/democicd-stag.zip'
+
+  azureServiceConnection: 'azure-democicd-stag'
+  azureWebAppName: 'democicd-stag-truongnd'
+
+steps:
+
+- checkout: self
+  displayName: 'Checkout source'
+
+- task: UseDotNet@2
+  displayName: 'Setup .NET 8'
+  inputs:
+    packageType: 'sdk'
+    version: '8.0.x'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Restore NuGet packages'
+  inputs:
+    command: 'restore'
+    projects: '$(solution)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build'
+  inputs:
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --no-restore'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Unit Test'
+  inputs:
+    command: 'test'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --no-build'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish'
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: '$(apiProject)'
+    arguments: '--configuration $(buildConfiguration) --output $(publishDirectory)'
+    zipAfterPublish: false
+
+- task: ArchiveFiles@2
+  displayName: 'Package application'
+  inputs:
+    rootFolderOrFile: '$(publishDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(packagePath)'
+    replaceExistingArchive: true
+
+- task: AzureWebApp@1
+  displayName: 'Deploy Azure App Service'
+  inputs:
+    azureSubscription: '$(azureServiceConnection)'
+    appType: 'webApp'
+    appName: '$(azureWebAppName)'
+    package: '$(packagePath)'
+    deploymentMethod: 'auto'

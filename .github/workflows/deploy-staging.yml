@@ -1,0 +1,71 @@
+name: DemoCICD STAG
+
+on:
+  push:
+    branches:
+      - staging
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  BUILD_CONFIG: Release
+
+  SLN: DemoCICD/DemoCICD.sln
+  API_PROJECT: DemoCICD/src/DemoCICD.API/DemoCICD.API.csproj
+
+  PUBLISH_PATH: DemoCICD/publish
+
+  AZURE_WEBAPP_NAME: democicd-stag-truongnd
+
+jobs:
+  build-and-deploy:
+    name: Build Test Publish Deploy
+    runs-on: windows-latest
+
+    steps:
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore NuGet packages
+        run: dotnet restore "${{ env.SLN }}"
+
+      - name: Build
+        run: >
+          dotnet build "${{ env.SLN }}"
+          --configuration "${{ env.BUILD_CONFIG }}"
+          --no-restore
+
+      - name: Unit Test
+        run: >
+          dotnet test "${{ env.SLN }}"
+          --configuration "${{ env.BUILD_CONFIG }}"
+          --no-build
+
+      - name: Publish
+        run: >
+          dotnet publish "${{ env.API_PROJECT }}"
+          --configuration "${{ env.BUILD_CONFIG }}"
+          --output "${{ env.PUBLISH_PATH }}"
+
+      - name: Login Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: ${{ env.PUBLISH_PATH }}

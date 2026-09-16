@@ -7,16 +7,34 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  buildConfiguration: 'Release'
+- group: DemoCICD-STAG-Secrets
 
-  solution: 'DemoCICD/DemoCICD.sln'
-  apiProject: 'DemoCICD/src/DemoCICD.API/DemoCICD.API.csproj'
+- name: buildConfiguration
+  value: 'Release'
 
-  publishDirectory: '$(Build.ArtifactStagingDirectory)/publish'
-  packagePath: '$(Build.ArtifactStagingDirectory)/democicd-stag.zip'
+- name: solution
+  value: 'DemoCICD/DemoCICD.sln'
+  
+- name: apiProject
+  value: 'DemoCICD/src/DemoCICD.API/DemoCICD.API.csproj'
+  
+- name: persistenceProject
+  value: 'DemoCICD/src/DemoCICD.Persistence/DemoCICD.Persistence.csproj'
+  
+- name: publishDirectory
+  value: '$(Build.ArtifactStagingDirectory)/publish'
+  
+- name: packagePath
+  value: '$(Build.ArtifactStagingDirectory)/democicd-stag.zip'
+  
+- name: migrationBundle
+  value: '$(Build.ArtifactStagingDirectory)/efbundle.exe'
+  
+- name: azureServiceConnection
+  value: 'azure-democicd-stag'
 
-  azureServiceConnection: 'azure-democicd-stag'
-  azureWebAppName: 'democicd-stag-truongnd'
+- name: azureWebAppName
+  value: 'democicd-stag-truongnd'
 
 steps:
 
@@ -48,6 +66,20 @@ steps:
     command: 'test'
     projects: '$(solution)'
     arguments: '--configuration $(buildConfiguration) --no-build'
+    
+- powershell: |
+    dotnet tool install --global dotnet-ef --version 8.*
+    dotnet ef migrations bundle `
+      --project "$(persistenceProject)" `
+      --startup-project "$(apiProject)" `
+      --configuration $(buildConfiguration) `
+      --output "$(migrationBundle)" `
+      --force
+  displayName: 'Build EF Migration Bundle'
+
+- powershell: |
+    & "$(migrationBundle)" --connection "$(STAGING_DB_CONNECTION_STRING)"
+  displayName: 'Run Database Migration'
 
 - task: DotNetCoreCLI@2
   displayName: 'Publish'

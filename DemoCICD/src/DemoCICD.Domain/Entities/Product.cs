@@ -7,7 +7,7 @@ public class Product : DomainEntity<Guid>
 
     public decimal Price { get; set; }
 
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     public static Product Create(Guid id, string name, decimal price, string description)
     {

@@ -57,6 +57,7 @@ steps:
     projects: '$(apiProject)'
     arguments: '--configuration $(buildConfiguration) --output $(publishDirectory)'
     zipAfterPublish: false
+    modifyOutputPath: false
 
 - task: ArchiveFiles@2
   displayName: 'Package application'
